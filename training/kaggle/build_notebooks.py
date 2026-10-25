@@ -373,7 +373,7 @@ N_SYNTH = 300 if SMOKE else 120000          # synthetic Indian plates for traini
 N_SYNTH_VAL = 60 if SMOKE else 3000         # hard synthetic validation plates (all layouts, toll angle, night IR)
 N_GREEN_VAL = 40 if SMOKE else 1000         # green EV validation plates: shows whether the new styles are learned
 GREEN_IN_SELECTION = 20 if SMOKE else 500   # how many of those also steer which epoch is kept
-EPOCHS = 1 if SMOKE else 22                 # ~9.5 min each on a T4: about 3.5 h, the LR schedule completes
+EPOCHS = 1 if SMOKE else 25                 # ~9.5 min each on a T4: about 4 h
 BATCH = 16 if SMOKE else 256
 LR = 5e-4
 PATIENCE = 10                               # stop early after this many epochs without improvement
@@ -382,7 +382,7 @@ VAL_FRACTION = 0.15
 MODEL_CFG = "cct_s_v2"                      # cct_xs_v2 = faster for edge devices
 BACKEND = os.environ.get("KERAS_BACKEND", "tensorflow")   # Kaggle images ship TensorFlow with GPU
 SEED = 0
-TIME_LIMIT_H = 4.0                          # hard stop for the whole run (Kaggle allows 12 h); training ends before this...
+TIME_LIMIT_H = 11.5                         # only a safety net: Kaggle kills a run at 12 h and its output is lost...
 EXPORT_RESERVE_MIN = 20                     # ...leaving this long for export, evaluation and the zip
 INPUT = os.environ.get("KAGGLE_INPUT", "/kaggle/input")
 WORK = os.environ.get("KAGGLE_WORK", "/kaggle/working")
