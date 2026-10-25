@@ -48,6 +48,33 @@ def _engine(args):
     return Drishti(cfg)
 
 
+def _debug_plates(eng, img, stem: str, out: Path) -> None:
+    """Every crop the OCR reads for each detected plate, saved as an image, with what it read."""
+    import cv2
+    import numpy as np
+
+    from .imaging import RESCUE_VIEWS
+
+    out.mkdir(parents=True, exist_ok=True)
+    for k, det in enumerate(sorted(eng.plate_det(img), key=lambda d: d.bbox.x1), 1):  # same order as the reads
+        b = det.bbox
+        print(f"  plate {k}: box {b.w:.0f}x{b.h:.0f} px (aspect {b.w / max(b.h, 1e-6):.1f}:1) at "
+              f"({b.x1:.0f},{b.y1:.0f}), detector score {det.score:.2f}")
+        views, _, _ = eng._views(img, det)
+        if not views:
+            continue
+        crops = [(name, v) for name, v, _ in views]
+        mid = views[min(1, len(views) - 1)][1]
+        crops += [(f"retry-{name}", fn(mid)) for name, fn in RESCUE_VIEWS.items()]
+        probs, _ = eng.ocr([c for _, c in crops])
+        for (name, crop), pr in zip(crops, probs):
+            dec = eng._decode(np.log(pr + 1e-9))
+            cv2.imwrite(str(out / f"{stem}_plate{k}_{name}.png"), crop)
+            print(f"     {name:<22} {crop.shape[1]:>4}x{crop.shape[0]:<4} px  OCR '{dec.raw_text}'  "
+                  f"as plate '{dec.text}' ({dec.prob:.2f})")
+    print(f"  crops saved in {out}/")
+
+
 def cmd_image(args) -> int:
     import cv2
 
@@ -85,6 +112,8 @@ def cmd_image(args) -> int:
                     print(f"  {k}. {'unreadable':<12} ({why})")
         if out_dir:
             cv2.imwrite(str(out_dir / f"{path.stem}_drishti.jpg"), eng.annotate(img, res))
+        if args.debug and not args.json:
+            _debug_plates(eng, img, path.stem, Path(args.debug))
     if args.json:
         print(json.dumps(results_all if len(results_all) != 1 else results_all[0], indent=2))
     return 0
@@ -371,6 +400,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("image", help="recognise plates in images or folders")
     p.add_argument("inputs", nargs="+")
     p.add_argument("--save-vis", help="folder for annotated images")
+    p.add_argument("--debug", metavar="DIR", help="save every crop the OCR reads and print what it read from each")
     p.add_argument("--json", action="store_true")
     common(p)
     p.set_defaults(func=cmd_image)

@@ -123,7 +123,7 @@ photo separated by `|`.
 
 | Command | Purpose |
 |---|---|
-| `drishti image PATH... [--save-vis DIR] [--json]` | Read plates in photos or folders |
+| `drishti image PATH... [--save-vis DIR] [--json] [--debug DIR]` | Read plates in photos or folders; `--debug` saves every crop the OCR reads and prints its read of each |
 | `drishti video SOURCE [--save-vis out.mp4] [--out events.jsonl] [--store]` | File, RTSP/HTTP stream or webcam index; one event per vehicle |
 | `drishti toll PHOTO` | Toll decision: automatic above the confidence threshold, otherwise manual review |
 | `drishti zones SOURCE --out zones.jpg` | Frame with a 0–1 grid for choosing a lane polygon and trigger line |
