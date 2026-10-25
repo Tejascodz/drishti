@@ -109,7 +109,9 @@ def cmd_image(args) -> int:
                     print(f"  {k}. {r.read.text:<12} confidence {r.read.confidence:.2f} ({r.read.level}){note}")
                 else:
                     why = f"too small to read, {w} px wide" if w < min_w else "plate found but not readable"
-                    print(f"  {k}. {'unreadable':<12} ({why})")
+                    guesses = list(dict.fromkeys([g for g in [r.read.raw_text] + [t for t, _ in r.read.alternatives] if g]))
+                    guess = f"  best guess: {', '.join(guesses[:3])} (very unsure, check by eye)" if guesses else ""
+                    print(f"  {k}. {'unreadable':<12} ({why}){guess}")
         if out_dir:
             cv2.imwrite(str(out_dir / f"{path.stem}_drishti.jpg"), eng.annotate(img, res))
         if args.debug and not args.json:
