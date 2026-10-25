@@ -16,7 +16,8 @@ FONTS=(
   "pathwaygothicone/PathwayGothicOne-Regular.ttf"
 )
 for f in "${FONTS[@]}"; do
-  name="$(basename "$f" | sed 's/%5B/[/; s/%5D/]/')"
+  # variable fonts are saved as Name-Variable.ttf: brackets are rejected by some uploaders (Kaggle)
+  name="$(basename "$f" | sed 's/%5Bwght%5D/-Variable/')"
   [ -s "$DIR/$name" ] && continue
   curl -fsSL -o "$DIR/$name" "$BASE/$f" && echo "fetched $name" || echo "skipped $name"
 done
