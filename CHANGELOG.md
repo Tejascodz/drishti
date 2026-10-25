@@ -22,6 +22,7 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
 - The OCR never runs on CoreML (it could stall for minutes on Apple silicon).
 - `models/drishti.yaml` is a template for your own model files.
 - Overlay labels stay inside the frame.
+- Model downloads show progress; an interrupted download leaves no partial file.
 
 ### Removed
 - Plate datasets, third-party sample photos and camera frames from the repository.

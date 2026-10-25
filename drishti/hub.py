@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import sys
 import tempfile
 import urllib.request
 from dataclasses import dataclass, field
@@ -122,16 +123,21 @@ def _download(url: str, dest: Path) -> None:
     try:
         digest = hashlib.sha256()
         with urllib.request.urlopen(url, timeout=120) as resp, os.fdopen(fd, "wb") as out:
+            total, done = int(resp.headers.get("Content-Length") or 0) / 1e6, 0
             while chunk := resp.read(1 << 20):
                 digest.update(chunk)
                 out.write(chunk)
+                done += len(chunk)
+                size = f"{done / 1e6:.1f} / {total:.1f} MB" if total else f"{done / 1e6:.1f} MB"
+                print(f"\rdownloading {dest.name}  {size}", end="", file=sys.stderr, flush=True)
+            print(file=sys.stderr)
         want = _SHA256.get(dest.name)
         if want is None:
             raise ValueError(f"no pinned SHA-256 for {dest.name}; refusing to use an unverified download")
         if digest.hexdigest() != want:
             raise ValueError(f"SHA-256 mismatch for {url}: got {digest.hexdigest()}, expected {want}")
         os.replace(tmp, dest)
-    except Exception:
+    except BaseException:  # includes Ctrl+C: never leave a partial file behind
         if os.path.exists(tmp):
             os.remove(tmp)
         raise
