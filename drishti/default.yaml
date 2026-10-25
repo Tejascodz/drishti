@@ -50,10 +50,17 @@ ocr:
     - [0.04, 0.10]
     - [0.10, 0.18]
     - [0.17, 0.27]
+  # Plates narrower than small_plate_px are read from tight crops only: wide paddings shrink
+  # already tiny characters inside the fixed OCR input.
+  small_plate_px: 90
+  small_views:
+    - [0.0, -0.10]
+    - [0.02, -0.06]
+    - [0.03, 0.0]
   rectify: true                # perspective-correct using detector corners or estimated quad
   two_line: auto               # auto | off  (split-and-stitch stacked plates)
   sr_below_height: 24          # apply sr_model when crop height is below this
-  rescue: true                 # unreadable / low-confidence plates: retry zoomed, contrast, brightness, grey
+  rescue: true                 # unreadable / low-confidence plates: retry deblocked, zoomed, contrast, brightness, grey
   rescue_below: 0.80           # retry plates read below this confidence
   rescue_max_confidence: 0.94  # a rescued read is a suggestion for review, never an automatic charge
 
@@ -120,6 +127,8 @@ vlm:
   model: qwen3-vl:2b
   api_key_env: DRISHTI_VLM_KEY
   trigger_below: 0.60
+  read_unreadable: true        # plates the OCR cannot read at all: let the VLM read them alone
+  unreadable_confidence: 0.50  # ...capped here (Poor, manual review), only if the answer is a valid plate
   timeout_s: 30.0
   keep_alive: 10m
 

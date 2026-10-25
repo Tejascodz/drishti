@@ -15,6 +15,14 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
 - Optional REST API key (`DRISHTI_API_KEY`), pinned SHA-256 for hub downloads,
   non-root Docker image, GitHub Actions CI, security policy.
 
+### Added (recognition)
+- Plates under 90 px wide are read from tight crops only (`ocr.small_plate_px`, `ocr.small_views`).
+- Deblocking retry for unreadable plates: 3x upscale + non-local-means denoising.
+- The local VLM reads plates the OCR cannot read at all (`vlm.read_unreadable`); answers must be
+  valid plates and are capped at Poor confidence for manual review.
+- `scripts/benchmark_degraded.py`: accuracy on shrunk, JPEG-compressed, blurred copies of labelled
+  photos.
+
 ### Changed
 - The default plate detector is Drishti's YOLO26-s model trained for Indian roads
   (`drishti-yolo26s-in-960`, release v0.1.0, AGPL-3.0); the OCR stays the public CCT-S v2.

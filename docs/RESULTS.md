@@ -90,6 +90,35 @@ synthetic plates as well. Until a v2 model beats the public OCR, the defaults
 use the trained detector with the public OCR. The VLM check changed no read here and
 adds about a second per photo. Four photos are a smoke test, not a benchmark.
 
+### Small, compressed plates (`scripts/benchmark_degraded.py`)
+
+The 4 labelled photos shrunk until the plate is 70, 55 or 45 px wide, saved as JPEG at quality
+60 and 30, with and without a 0.8 px blur: 48 cases with known answers. Trained detector, public
+OCR, 2-core CPU.
+
+| Plate width | Before | After |
+|---|---|---|
+| 70 px | 3 / 16 (confidence when right 0.63) | **4 / 16** (0.72) |
+| 55 px | 0 / 16 | 0 / 16 |
+| 45 px | 0 / 16 | 0 / 16 |
+| Latency per photo (median) | 569 ms | 541 ms |
+
+The detector found the plate in every case; reading is what fails. Diagnosis per crop showed
+that the tightest crop reads best and wide paddings turn tiny characters into misleading reads,
+so plates under 90 px wide are now read from tight crops only (`ocr.small_plate_px`,
+`ocr.small_views`), and unreadable plates get one more retry: 3× upscale followed by
+non-local-means denoising, which removes JPEG blocks (`imaging.deblock_zoom`).
+
+Tested and not kept: Lanczos upscaling with unsharp masking, CLAHE alone, denoising before
+upscaling, and running the retries on the tight crop as well (35% slower, no extra read).
+
+Below about 60 px with heavy compression, characters are 4–5 px wide and classical image
+processing cannot restore them; the 4 clean photos are unaffected (4 / 4, mean confidence
+0.946 → 0.960). What can: the local VLM, which now also reads plates the OCR gives up on
+(`vlm.read_unreadable`, always capped at Poor for manual review; measure with
+`--vlm-model qwen3-vl:2b`), a super-resolution model (`models.sr_model`), or an OCR trained on
+low-resolution plates (OCR notebook v2).
+
 ## Video (tracking + multi-frame fusion)
 
 Synthetic "vehicle approaching the camera" clips built from the real photos:

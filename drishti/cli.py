@@ -77,6 +77,8 @@ def cmd_image(args) -> int:
                     note = "  -> needs review" if (r.read.low_confidence or r.read.level == "Poor") else ""
                     if r.read.rescued:
                         note += "  (read after zoom / contrast / brightness retry)"
+                    if r.read.verified_by == "vlm-only":
+                        note += "  (read by the vision model alone; the OCR could not read it)"
                     print(f"  {k}. {r.read.text:<12} confidence {r.read.confidence:.2f} ({r.read.level}){note}")
                 else:
                     why = f"too small to read, {w} px wide" if w < min_w else "plate found but not readable"

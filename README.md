@@ -31,6 +31,7 @@ reads match their labels. Regenerate: `python scripts/make_readme_images.py samp
 | Plate detection, 2,082 validation photos (37 Indian + 2,045 Roboflow) | trained YOLO26-s 960: recall **96.1%**, precision **97.5%**, small-plate recall **86.0%** (public yolo-v9-s-608: 93.6% / 96.4% / 79.3%) |
 | Plate detection, Roboflow v13 test split (1,020 photos) | public yolo-v9-s-608: recall 94.8%, precision 98.0% |
 | 4 labelled Indian road photos (GJ, TN, DL, HR) | all 4 plates read by every detector × OCR combination; public OCR confidence 0.95, first fine-tuned OCR 0.65 |
+| Same photos shrunk to 70 / 55 / 45 px wide plates, JPEG q60–30 (48 cases) | 4 / 16 at 70 px, none below; reading, not detection, is the limit (see [`docs/RESULTS.md`](docs/RESULTS.md)) |
 | 600 heavily degraded synthetic Indian plates, same OCR | exact match 37.2% with free decoding → **50.2%** with the Indian format grammar |
 | Synthetic approaching-vehicle clips, 60 frames each | 2 of 3 plates correct at track level (0.85, 0.99) from 22% and 70% correct single frames; the third is one character short and flagged low-confidence (0.34) |
 | Latency, 2-core CPU, 1080p | detector ≈ 150 ms, OCR ≈ 30 ms per batch of crop views, 300–650 ms per photo |
@@ -59,10 +60,11 @@ frame ─► plate detector ─► crop views ─► slot OCR ─► Indian form
 | OCR | fast-plate-ocr compatible slot OCR; the full slot × character probability matrix is kept, not only the arg-max | `drishti/ocr/slot_ocr.py` |
 | Format grammar | Exact search for the most probable *valid* registration mark: real state codes (incl. TS→TG, OR→OD, UA→UK), series letters without I/O, Delhi short RTO codes, Bharat, vintage, temporary, armed-forces and diplomatic layouts. `GJO2CG3862` → `GJ02CG3862` | `drishti/formats/` |
 | Fusion | Views and frames that agree on layout are combined by weighted log-probability averaging, then decoded again | `drishti/fusion.py` |
-| Rescue | Unreadable or low-confidence plates are re-read through zoomed, contrast-enhanced, gamma-corrected and best-channel copies; a rescued read is capped below the auto-charge threshold | `drishti/imaging.py` |
+| Small plates | Plates under 90 px wide are read from tight crops only, so the few pixels per character are not shrunk further | `drishti/pipeline.py` |
+| Rescue | Unreadable or low-confidence plates are re-read through deblocked (upscale + non-local-means), zoomed, contrast-enhanced, gamma-corrected and best-channel copies; a rescued read is capped below the auto-charge threshold | `drishti/imaging.py` |
 | Video | ByteTrack-style tracking with buffered IoU, frame selection by image quality, ECC-registered stacking of the best crops, one event per vehicle with direction, type and colour | `drishti/track.py`, `drishti/pipeline.py` |
 | Confidence | String probability × cross-view agreement, or a logistic model fitted on your labelled data (`drishti calibrate`) | `drishti/fusion.py`, `drishti/evaluate.py` |
-| VLM check | Optional: a local vision-language model (Ollama) re-reads low-confidence plates; its answer counts only if it is a valid plate and one of the OCR's candidates or one edit away | `drishti/ocr/vlm.py` |
+| VLM check | Optional: a local vision-language model (Ollama) re-reads low-confidence plates; its answer counts only if it is a valid plate and one of the OCR's candidates or one edit away. Plates the OCR cannot read at all are read by the VLM alone, accepted only as a valid plate and always sent to manual review | `drishti/ocr/vlm.py` |
 
 Design background and sources: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 
@@ -106,6 +108,7 @@ drishti --config models/drishti.yaml image photos/ --save-vis out
 | `scripts/check_models.py` | Validates a detector + OCR pair: ONNX loads, input/output shapes, OCR output vs its plate config, comparison with the public OCR it was fine-tuned from, then the full pipeline on labelled photos |
 | `scripts/review_reads.py` | HTML page for checking reads by eye: every photo annotated, every plate crop enlarged with its text, confidence and alternatives |
 | `scripts/compare_setups.py` | Every public/own detector × OCR combination, plus your models with the local VLM, on one labelled CSV, as a table and per-photo reads |
+| `scripts/benchmark_degraded.py` | Accuracy on shrunk, JPEG-compressed, blurred copies of labelled photos (small and messaging-app plates); `--vlm-model` adds the local VLM |
 | `scripts/make_readme_images.py` | The results image above, from photos you may publish |
 
 ```bash

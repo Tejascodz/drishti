@@ -33,7 +33,7 @@ h1{{font-size:20px}} h2{{font-size:16px;margin:0 0 10px}}
 .photo>img{{width:100%;max-height:420px;object-fit:contain;background:#000;border-radius:8px}}
 .plates{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}}
 .plate{{border:1px solid var(--line);border-radius:10px;padding:10px}}
-.plate img{{width:100%;height:90px;object-fit:contain;background:#000;border-radius:6px;image-rendering:pixelated}}
+.plate img{{width:100%;height:90px;object-fit:contain;background:#000;border-radius:6px}}
 .text{{font:700 22px ui-monospace,Menlo,monospace;letter-spacing:.05em;margin-top:6px}}
 .meta{{color:var(--muted);font-size:13px}}
 .Good{{color:var(--good)}}.Average{{color:var(--avg)}}.Poor{{color:var(--poor)}}

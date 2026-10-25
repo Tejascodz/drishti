@@ -176,7 +176,15 @@ def best_channel_gray(crop: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(ch, cv2.COLOR_GRAY2BGR)
 
 
+def deblock_zoom(crop: np.ndarray, factor: float = 3.0, strength: float = 9.0) -> np.ndarray:
+    """Upscale, then non-local-means denoise: JPEG blocks and sensor noise become smooth strokes.
+    Denoising after upscaling keeps thin strokes that denoising the tiny crop would erase."""
+    big = cv2.resize(crop, None, fx=factor, fy=factor, interpolation=cv2.INTER_CUBIC)
+    return cv2.fastNlMeansDenoisingColored(big, None, strength, strength, 5, 15)
+
+
 RESCUE_VIEWS = {
+    "deblock": deblock_zoom,
     "zoom": zoom,
     "contrast": local_contrast,
     "gamma": lambda c: local_contrast(auto_gamma(c)),

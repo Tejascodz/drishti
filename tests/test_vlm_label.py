@@ -143,3 +143,30 @@ def test_labelling_end_to_end(ollama, tmp_path):
     # resumable: a second run processes nothing new
     again = run_labelling(eng, [str(root / "images")], out, vlm=v)
     assert again["images_processed_now"] == 0 and again["plates"] == 2
+
+
+def _engine_stub(vlm):
+    """Just enough of a Drishti engine to exercise the VLM decision logic."""
+    from drishti.config import load_config
+    from drishti.pipeline import Drishti
+
+    eng = object.__new__(Drishti)
+    eng.cfg = load_config(overrides={"vlm": {"enabled": True}})
+    eng.grammar, eng.vlm = G, vlm
+    return eng
+
+
+def test_vlm_reads_plates_the_ocr_cannot(ollama):
+    from drishti.types import PlateRead
+
+    eng = _engine_stub(VLMVerifier(ollama, "qwen3-vl:2b", region="india"))
+    read = eng._maybe_verify(PlateRead(None, 0.02, "free", abstained=True), CROP)
+    assert read.text == "KA05MX3021" and read.verified_by == "vlm-only"
+    assert read.confidence <= 0.5 and read.low_confidence and read.level == "Poor"  # review, never auto
+
+    _FakeOllama.answer = {"plate": "HELLO123", "readable": True}  # not a valid Indian plate
+    assert eng._maybe_verify(PlateRead(None, 0.02, "free", abstained=True), CROP).text is None
+
+    eng.cfg.vlm.read_unreadable = False
+    _FakeOllama.answer = {"plate": "KA05MX3021", "readable": True}
+    assert eng._maybe_verify(PlateRead(None, 0.02, "free", abstained=True), CROP).text is None

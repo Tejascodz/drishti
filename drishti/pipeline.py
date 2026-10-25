@@ -93,6 +93,10 @@ class Drishti:
         calib_path = c.recognition.get("calibration")
         self.calib = json.loads(expand_path(calib_path).read_text()) if calib_path else None
         self.views = [tuple(v) for v in c.ocr.views]
+        # small plates: wide paddings shrink the characters inside the fixed OCR input and add
+        # misleading reads, so only tight crops are used below this width
+        self.small_views = [tuple(v) for v in (c.ocr.get("small_views") or c.ocr.views)]
+        self.small_plate_px = float(c.ocr.get("small_plate_px", 0) or 0)
         im = c.get("imaging") or {}
         self.imaging = im
         self.bpc = self.make_bpc(learn=False) if str(im.get("bad_pixel", "off")).lower() in ("on", "true") else None
@@ -117,7 +121,8 @@ class Drishti:
         oc = self.cfg.ocr
         quad = corners_from_keypoints(det.keypoints, det.bbox) if oc.rectify else None
         views: list[tuple[str, np.ndarray, float]] = []
-        for fx, fy in self.views:
+        pads = self.small_views if det.bbox.w < self.small_plate_px else self.views
+        for fx, fy in pads:
             img = None
             if quad is not None:
                 try:
@@ -279,7 +284,11 @@ class Drishti:
         return read
 
     def _maybe_verify(self, read: PlateRead, crop: np.ndarray) -> PlateRead:
-        if self.vlm is None or read.text is None or read.confidence >= self.cfg.vlm.trigger_below:
+        if self.vlm is None:
+            return read
+        if read.text is None:
+            return self._vlm_read_unreadable(read, crop)
+        if read.confidence >= self.cfg.vlm.trigger_below:
             return read
         answer = self.vlm.verify(crop, read.text, read.alternatives, self.grammar)
         if answer:
@@ -290,6 +299,28 @@ class Drishti:
             read.confidence = max(read.confidence, self.cfg.vlm.trigger_below)
             read.low_confidence = read.confidence < self.cfg.recognition.min_confidence
             read.level = confidence_level(read.confidence, (self.cfg.get("tolling") or {}).get("levels"))
+        return read
+
+    def _vlm_read_unreadable(self, read: PlateRead, crop: np.ndarray) -> PlateRead:
+        """The OCR found nothing legible: ask the VLM to read the crop on its own. Its answer counts
+        only if it is a valid plate under the active grammar, and it is always capped at
+        `vlm.unreadable_confidence` (Poor), so it goes to manual review and never auto-charges."""
+        vc = self.cfg.vlm
+        if not vc.get("read_unreadable", True) or crop is None or crop.size == 0:
+            return read
+        try:
+            ans = self.vlm.read(crop)
+        except Exception as exc:  # network / server errors must never break recognition
+            log.warning("VLM read skipped: %s", exc)
+            return read
+        fmt = self.grammar.is_valid(ans.text) if ans.text else None
+        if fmt is None:
+            return read
+        read.text, read.fmt, read.abstained, read.verified_by = ans.text, fmt, False, "vlm-only"
+        read.confidence = min(float(vc.get("unreadable_confidence", 0.5)), self.cfg.recognition.min_confidence)
+        read.alternatives = [(ans.text, read.confidence)]
+        read.low_confidence = True
+        read.level = confidence_level(read.confidence, (self.cfg.get("tolling") or {}).get("levels"))
         return read
 
     def read_padded_crop(self, img: np.ndarray):
