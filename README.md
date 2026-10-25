@@ -9,7 +9,7 @@ RTSP streams on an ordinary CPU, tracks each vehicle across frames, and reports 
 reading per vehicle with a calibratable confidence. A plate it cannot read is reported as
 unreadable rather than guessed.
 
-!
+![Review page: two Haryana traffic plates read in one photo, a small 75 px plate HP839617 recovered by the rescue views at 0.82 and HR85A0398 at 0.95, both matching their labels](docs/images/review_page_two_plates.jpg)
 ## Contents
 
 [Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) ·
