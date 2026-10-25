@@ -173,5 +173,9 @@ def resolve(name_or_path: str, role: str = "model", cache_dir: str | os.PathLike
 
 
 def spec_format(name_or_path: str) -> str | None:
+    """Output format of a hub model, also for a local copy of one of its files (e.g. a downloaded .onnx)."""
     spec = REGISTRY.get(name_or_path)
+    if spec is None:
+        base = Path(str(name_or_path)).name
+        spec = next((s for s in REGISTRY.values() if any(u.rsplit("/", 1)[-1] == base for u in s.files.values())), None)
     return spec.fmt if spec else None
