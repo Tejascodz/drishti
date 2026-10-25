@@ -44,6 +44,11 @@ given a labels file, whether it matches:
 
 <sub>`python scripts/review_reads.py samples --labels samples/labels.csv --out review` on the DL dashcam sample.</sub>
 
+![Review page: two Haryana traffic plates read in one photo, a small 75 px plate HP839617 recovered by the rescue views at 0.82 and HR85A0398 at 0.95, both matching their labels](docs/images/review_page_two_plates.jpg)
+
+<sub>Two plates in one photo: the 75 px wide plate is read from tight crops and recovered by the rescue views
+(marked *rescued*), the nearer one reads at 0.95. Both match their labels.</sub>
+
 Method, data and every intermediate experiment: [`docs/RESULTS.md`](docs/RESULTS.md).
 The labelled sets are small; treat the reading results as smoke tests until you run
 `drishti eval` on footage from your own camera.
