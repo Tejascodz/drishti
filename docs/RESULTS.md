@@ -86,7 +86,7 @@ The first fine-tuned OCR reads the same strings but with far lower confidence, w
 would send every plate to manual review (automatic tolling needs > 0.95). Its training
 run selected the best epoch on 58 easy validation plates that every epoch scored 100%
 on, so it kept an early, under-trained epoch; notebook v2 validates on 3,000 hard
-synthetic plates as well. Until a v2 model beats the public OCR, the defaults
+synthetic plates as well, and v3 adds 1,000 green EV plates. Until a fine-tuned model beats the public OCR, the defaults
 use the trained detector with the public OCR. The VLM check changed no read here and
 adds about a second per photo. Four photos are a smoke test, not a benchmark.
 
@@ -125,7 +125,7 @@ processing cannot restore them; the 4 clean photos are unaffected (4 / 4, mean c
 0.946 → 0.960). What can: the local VLM, which now also reads plates the OCR gives up on
 (`vlm.read_unreadable`, always capped at Poor for manual review; measure with
 `--vlm-model qwen3-vl:2b`), a super-resolution model (`models.sr_model`), or an OCR trained on
-low-resolution plates (OCR notebook v2).
+low-resolution and green EV plates (OCR notebook v3).
 
 ## Video (tracking + multi-frame fusion)
 

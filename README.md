@@ -44,9 +44,10 @@ The labelled sets are small; treat the reading results as smoke tests until you 
 
 ```
 frame ─► plate detector ─► crop views ─► slot OCR ─► Indian format grammar ─┐
-  │      YOLO (ONNX)       3-4 paddings,  CCT, per-slot  state codes, I/O rule, │
+  │      YOLO26 (ONNX)     3-4 paddings,  CCT, per-slot  state codes, I/O rule, │
   │                         deskew,        probabilities  BH / VA / army / ...  ▼
-  │                         two-line                                  fused read per photo
+  │                         two-line,                                 fused read per photo
+  │                         4x super-res                      unreadable ─► rescue views
   └─► vehicle detector ─► tracker ─► per-track evidence ─► multi-frame fusion ─► event
       RF-DETR (optional)  ByteTrack,    best frames by       logit averaging +    plate, confidence,
                           buffered IoU  image quality        aligned frame stack  alternatives, vehicle
@@ -60,6 +61,7 @@ frame ─► plate detector ─► crop views ─► slot OCR ─► Indian form
 | OCR | fast-plate-ocr compatible slot OCR; the full slot × character probability matrix is kept, not only the arg-max | `drishti/ocr/slot_ocr.py` |
 | Format grammar | Exact search for the most probable *valid* registration mark: real state codes (incl. TS→TG, OR→OD, UA→UK), series letters without I/O, Delhi short RTO codes, Bharat, vintage, temporary, armed-forces and diplomatic layouts. `GJO2CG3862` → `GJ02CG3862` | `drishti/formats/` |
 | Fusion | Views and frames that agree on layout are combined by weighted log-probability averaging, then decoded again | `drishti/fusion.py` |
+| Super-resolution | Small or unsure plates are also read from a Real-ESRGAN 4x restored crop; the restored read is an extra opinion fused with the others, never a replacement | `drishti/pipeline.py` |
 | Small plates | Plates under 90 px wide are read from tight crops only, so the few pixels per character are not shrunk further | `drishti/pipeline.py` |
 | Rescue | Unreadable or low-confidence plates are re-read through deblocked (upscale + non-local-means), zoomed, contrast-enhanced, gamma-corrected and best-channel copies; a rescued read is capped below the auto-charge threshold | `drishti/imaging.py` |
 | Video | ByteTrack-style tracking with buffered IoU, frame selection by image quality, ECC-registered stacking of the best crops, one event per vehicle with direction, type and colour | `drishti/track.py`, `drishti/pipeline.py` |
@@ -240,15 +242,18 @@ Labelling runs locally with a vision model in Ollama; training runs on Kaggle's 
 
 1. `drishti label photos/ --out data/ocr_real` reads every plate with the OCR and the VLM
    independently. Agreements are accepted; the rest are fixed in an offline review page.
-2. Run `training/kaggle/drishti_detector_kaggle.ipynb` and `drishti_ocr_kaggle.ipynb`
-   (notebook v2: validation on real plates plus 3,000 hard synthetic ones). Both report the
-   current and the new model on the same validation set.
+2. Run `training/kaggle/drishti_detector_kaggle.ipynb` and `drishti_ocr_kaggle.ipynb`.
+   The OCR notebook (v3) fine-tunes the public OCR on 120,000 synthetic plates plus your real
+   crops, checks GPU, internet and inputs in its first minutes, and scores the public and the
+   new model on real, hard synthetic and green EV plates. Both notebooks report the current
+   and the new model on the same validation set.
 3. Check and compare the exported models (`scripts/check_models.py`,
    `scripts/compare_setups.py`) before pointing `models/drishti.yaml` at them.
 
 Full guide: [`docs/TRAINING.md`](docs/TRAINING.md). Synthetic Indian plate generator (HSRP
-layouts, colour schemes, two-line plates, overhead geometry, infrared):
-`training/synth/render_plates.py`.
+layouts; white, yellow, green EV, black rental, army and diplomatic colour schemes; dotted and
+hyphenated separators; emblems; thin aftermarket strips; two-line plates; overhead geometry;
+infrared): `training/synth/render_plates.py`.
 
 ## Project layout
 
@@ -297,6 +302,10 @@ Use ANPR only where you are permitted to.
 
 * The bundled OCR is the public global model; the first Indian fine-tuning run is not yet
   better (see [Results](#results)).
+* Green EV plates with dotted separators or emblems (e.g. `KA·53HS·3074`) are not read by
+  the public OCR; the v3 fine-tune trains on these styles.
+* Plates below about 60 px wide are at the information limit: super-resolution and rescue
+  views help a little, but cannot recover characters that are not in the pixels.
 * Small two-line plates (two-wheelers at a distance) are the weakest case.
 * The detectors have no corner head, so perspective is corrected by deskewing; a YOLO26-pose
   corner model can be trained with `training/detector/`.
