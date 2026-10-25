@@ -49,6 +49,29 @@ given a labels file, whether it matches:
 <sub>Two plates in one photo: the 75 px wide plate is read from tight crops and recovered by the rescue views
 (marked *rescued*), the nearer one reads at 0.95. Both match their labels.</sub>
 
+### More real photos
+
+Night infrared, a dark junction camera and dusk traffic, read with the same default models:
+
+![Night infrared photo of a car from behind, plate read as FGZ9559 at 0.88](docs/images/review_night_ir.jpg)
+
+<sub>Infrared night frame: FGZ9559 at 0.88.</sub>
+
+![Junction camera at night, only headlights and the plate visible, plate read as MH02FR2933 at 0.94](docs/images/review_night_camera.jpg)
+
+<sub>Junction camera at night (camera caption blurred): MH02FR2933 at 0.94.</sub>
+
+![Dusk traffic with two plates: a 126 px plate read as HR98U0864 at 0.57 after rescue, and a 66 px plate reported as unreadable with its best guesses shown separately](docs/images/review_dusk_two_plates.jpg)
+
+<sub>Dusk traffic: HR98U0864 is recovered by the rescue views but kept at Poor (0.57) for review; the 66 px
+plate further back is reported as unreadable, its guesses shown separately and never used as a reading.</sub>
+
+![A green EV plate KA·53HS·3074 shown four ways: original colour, grayscale, contrast-enhanced and binarised](docs/images/green_ev_plate_views.jpg)
+
+<sub>The open problem: a green EV plate with dots and an emblem (KA·53HS·3074). The colour, grayscale,
+enhanced and binarised views above are all clear to a person, but the public OCR has never seen this style
+and reads none of them. The OCR notebook v3 fine-tune trains on exactly these styles.</sub>
+
 Method, data and every intermediate experiment: [`docs/RESULTS.md`](docs/RESULTS.md).
 The labelled sets are small; treat the reading results as smoke tests until you run
 `drishti eval` on footage from your own camera.
