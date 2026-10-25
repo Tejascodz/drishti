@@ -81,6 +81,19 @@ frame ─► plate detector ─► crop views ─► slot OCR ─► Indian form
 | Confidence | String probability × cross-view agreement, or a logistic model fitted on your labelled data (`drishti calibrate`) | `drishti/fusion.py`, `drishti/evaluate.py` |
 | VLM check | Optional: a local vision-language model (Ollama) re-reads low-confidence plates; its answer counts only if it is a valid plate and one of the OCR's candidates or one edit away. Plates the OCR cannot read at all are read by the VLM alone, accepted only as a valid plate and always sent to manual review. The VLM sees only the characters' band, with light-on-dark plates (green EV, black rental) turned into dark-on-light negatives | `drishti/ocr/vlm.py`, `drishti/geometry.py` |
 
+Design principles:
+
+* **Abstain rather than guess.** A plate that no view can read with enough support is reported
+  as unreadable, with the OCR's best guesses shown separately for review, never as a reading.
+* **Only valid plates.** Every reading is decoded against the Indian registration format, so
+  an output is always a plate that can exist.
+* **Several opinions, fused only when they agree.** Crop views, restored crops and video frames
+  are combined only if they agree on the layout; a lone outlier cannot outvote the rest.
+* **Honest confidence.** Rescued, VLM-only and low-agreement reads are capped below the
+  automatic-tolling threshold and go to manual review.
+* **Local by default.** Inference runs on your machine. The optional VLM is off by default and
+  talks to a local Ollama; images leave the machine only if you point `vlm.endpoint` elsewhere.
+
 Design background and sources: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 
 ## Quick start
@@ -172,8 +185,9 @@ events = eng.process_video("clip.mp4", on_event=lambda e: print(e.text, e.confid
 ## REST API
 
 ```bash
-DRISHTI_API_KEY=change-me drishti serve --host 0.0.0.0 --port 8000
-curl -H "X-API-Key: change-me" -F file=@photo.jpg http://localhost:8000/v1/recognize
+export DRISHTI_API_KEY=$(openssl rand -hex 32)      # a long random key; keep it out of git
+drishti serve --host 0.0.0.0 --port 8000
+curl -H "X-API-Key: $DRISHTI_API_KEY" -F file=@photo.jpg http://localhost:8000/v1/recognize
 ```
 
 | Method | Path | Description |
@@ -192,7 +206,7 @@ Docker (CPU, non-root, models baked in, data in a volume):
 
 ```bash
 docker build -t drishti .
-docker run -p 8000:8000 -e DRISHTI_API_KEY=change-me -v drishti-data:/data drishti
+docker run -p 8000:8000 -e DRISHTI_API_KEY -v drishti-data:/data drishti   # passes the key from your shell
 ```
 
 ## Toll and gantry cameras
@@ -300,8 +314,8 @@ CI runs lint and tests on Python 3.10 and 3.12 for every push and pull request. 
 
 ## Security and privacy
 
-* Set `DRISHTI_API_KEY` whenever the API is reachable from a network; the Docker image runs
-  as a non-root user.
+* Set `DRISHTI_API_KEY` to a long random value whenever the API is reachable from a network, and
+  put it behind HTTPS (a reverse proxy) outside a trusted LAN; the Docker image runs as a non-root user.
 * Every model the hub downloads is verified against a pinned SHA-256; a mismatching file is
   discarded.
 * Plate numbers are personal data in many jurisdictions. `privacy.hash_plates`,
