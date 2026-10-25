@@ -9,12 +9,7 @@ RTSP streams on an ordinary CPU, tracks each vehicle across frames, and reports 
 reading per vehicle with a calibratable confidence. A plate it cannot read is reported as
 unreadable rather than guessed.
 
-![Plate reads on real photos: each photo annotated, with the plate enlarged next to the text and confidence Drishti reported](docs/images/results.jpg)
-
-<sub>Real road photos (demo images from [sanchit2843/Indian_LPR](https://github.com/sanchit2843/Indian_LPR),
-fetched by `scripts/fetch_samples.sh`), read with the default models: Drishti's trained YOLO26 plate detector and the public OCR. All four
-reads match their labels. Regenerate: `python scripts/make_readme_images.py samples --count 4`.</sub>
-
+!
 ## Contents
 
 [Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) ·
