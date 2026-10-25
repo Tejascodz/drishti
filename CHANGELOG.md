@@ -24,6 +24,10 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
   crops are an extra opinion on small or unsure plates, never a replacement. 48 shrunk/compressed
   sample cases: 4 -> 5 read; clean photos unchanged.
 - `drishti image --debug DIR` and best guesses for unreadable plates.
+- The VLM is shown only the characters' band (densest vertical edges), as dark characters on a light
+  plate: green EV, black rental and army plates become greyscale negatives.
+- Synthetic plates for OCR training add green EV share, separator dots (`KA·53HS·3074`), aftermarket
+  emblems and long thin strips; labels stay plain characters.
 - `scripts/benchmark_degraded.py`: accuracy on shrunk, JPEG-compressed, blurred copies of labelled
   photos.
 

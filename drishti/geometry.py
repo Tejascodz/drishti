@@ -240,6 +240,47 @@ def stitch_two_lines(crop: np.ndarray, layout: tuple[int, int, int, int, int] | 
     return np.concatenate([t, gap, b], axis=1)
 
 
+def text_band(crop: np.ndarray, margin_x: float = 0.08, margin_y: float = 0.35) -> np.ndarray:
+    """The characters' band inside a padded crop: rows and columns dense in vertical edges (strokes),
+    which vehicle bodies, shadows and plate holders lack. Falls back to the whole crop."""
+    if crop.size == 0 or min(crop.shape[:2]) < 8:
+        return crop
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if crop.ndim == 3 else crop
+    gx = np.abs(cv2.Sobel(gray.astype(np.float32), cv2.CV_32F, 1, 0, ksize=3))
+    rows = np.convolve(gx.mean(axis=1), np.ones(5) / 5, mode="same")
+    peak = int(np.argmax(rows))
+    if rows[peak] <= 0:
+        return crop
+    y1 = y2 = peak
+    while y1 > 0 and rows[y1 - 1] > 0.45 * rows[peak]:
+        y1 -= 1
+    while y2 < len(rows) - 1 and rows[y2 + 1] > 0.45 * rows[peak]:
+        y2 += 1
+    cols = np.convolve(gx[y1 : y2 + 1].mean(axis=0), np.ones(9) / 9, mode="same")
+    on = np.where(cols > 0.12 * cols.max())[0]  # generous: clipping a faint last character is worse
+    x1, x2 = int(on[0]), int(on[-1]) + 1
+    h, w = y2 + 1 - y1, x2 - x1
+    H, W = gray.shape
+    if h < 4 or w < 3 * h:  # not a text line; keep the whole crop
+        return crop
+    return crop[max(0, int(y1 - margin_y * h)) : min(H, int(y2 + 1 + margin_y * h)),
+                max(0, int(x1 - margin_x * w)) : min(W, int(x2 + margin_x * w))]
+
+
+def dark_text_on_light(crop: np.ndarray) -> np.ndarray:
+    """Green EV, black rental and army plates carry light characters on a dark background, the
+    reverse of what readers mostly see. Characters are the minority class of an Otsu split; when
+    that minority is the bright side, a greyscale negative is returned (dark characters, light plate)."""
+    if crop.size == 0:
+        return crop
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if crop.ndim == 3 else crop
+    _, th = cv2.threshold(cv2.GaussianBlur(gray, (3, 3), 0), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    if th.mean() / 255.0 >= 0.5:
+        return crop
+    neg = 255 - gray
+    return cv2.cvtColor(neg, cv2.COLOR_GRAY2BGR) if crop.ndim == 3 else neg
+
+
 def estimate_quad(crop: np.ndarray) -> np.ndarray | None:
     """Find the plate's own border inside a padded crop (classical, used when the
     detector has no corner head). Returns quad in crop coords or None."""

@@ -64,7 +64,7 @@ frame ─► plate detector ─► crop views ─► slot OCR ─► Indian form
 | Rescue | Unreadable or low-confidence plates are re-read through deblocked (upscale + non-local-means), zoomed, contrast-enhanced, gamma-corrected and best-channel copies; a rescued read is capped below the auto-charge threshold | `drishti/imaging.py` |
 | Video | ByteTrack-style tracking with buffered IoU, frame selection by image quality, ECC-registered stacking of the best crops, one event per vehicle with direction, type and colour | `drishti/track.py`, `drishti/pipeline.py` |
 | Confidence | String probability × cross-view agreement, or a logistic model fitted on your labelled data (`drishti calibrate`) | `drishti/fusion.py`, `drishti/evaluate.py` |
-| VLM check | Optional: a local vision-language model (Ollama) re-reads low-confidence plates; its answer counts only if it is a valid plate and one of the OCR's candidates or one edit away. Plates the OCR cannot read at all are read by the VLM alone, accepted only as a valid plate and always sent to manual review | `drishti/ocr/vlm.py` |
+| VLM check | Optional: a local vision-language model (Ollama) re-reads low-confidence plates; its answer counts only if it is a valid plate and one of the OCR's candidates or one edit away. Plates the OCR cannot read at all are read by the VLM alone, accepted only as a valid plate and always sent to manual review. The VLM sees only the characters' band, with light-on-dark plates (green EV, black rental) turned into dark-on-light negatives | `drishti/ocr/vlm.py`, `drishti/geometry.py` |
 
 Design background and sources: [`docs/RESEARCH.md`](docs/RESEARCH.md).
 

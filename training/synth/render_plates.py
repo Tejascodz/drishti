@@ -52,10 +52,10 @@ LAYOUT_WEIGHTS = {"std2": 0.52, "std1": 0.17, "dl": 0.08, "std0": 0.03, "bh": 0.
 
 # category -> (background RGB, text RGB, probability)
 SCHEMES = {
-    "private": ((245, 245, 242), (15, 15, 15), 0.58),
+    "private": ((245, 245, 242), (15, 15, 15), 0.52),
     "commercial": ((250, 205, 25), (15, 15, 15), 0.2),
-    "ev_private": ((25, 140, 70), (250, 250, 250), 0.08),
-    "ev_commercial": ((25, 140, 70), (250, 205, 25), 0.04),
+    "ev_private": ((25, 140, 70), (250, 250, 250), 0.13),
+    "ev_commercial": ((25, 140, 70), (250, 205, 25), 0.05),
     "rental": ((15, 15, 15), (250, 205, 25), 0.05),
     "army": ((15, 15, 15), (245, 245, 245), 0.02),
     "diplomatic": ((20, 60, 160), (245, 245, 245), 0.03),
@@ -162,6 +162,8 @@ def render(groups: list[str], layout: str, rng: np.random.Generator, fonts: list
 
     if two_line:
         W, H = (400, 200) if rng.random() < 0.6 else (340, 200)
+    elif not hsrp and rng.random() < 0.4:
+        W, H = 560, 80  # long thin aftermarket strip (scooters, EVs): about 7:1
     else:
         W, H = 520, 112
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -184,9 +186,19 @@ def render(groups: list[str], layout: str, rng: np.random.Generator, fonts: list
         if rng.random() < 0.6:  # laser-etched serial along the bottom edge
             sf = ImageFont.truetype(fonts[0], max(6, int(0.07 * H)))
             d.text((int(0.35 * W), int(0.9 * H) - 2), "".join(rng.choice(list(DIGITS), 10)), font=sf, fill=fg + (160,))
+    elif not two_line and rng.random() < 0.35:  # aftermarket emblem at the left edge (a ring with a mark)
+        er = int(0.24 * H)
+        ex, ey = int(0.035 * W) + er, H // 2
+        d.ellipse([ex - er, ey - er, ex + er, ey + er], outline=fg + (255,), width=max(2, er // 4))
+        d.arc([ex - er // 2, ey - er // 2, ex + er // 2, ey + er // 2], 200, 340, fill=fg + (255,), width=max(1, er // 5))
+        left = ex + er + int(0.02 * W)
 
     font_path = str(rng.choice(fonts))
-    sep = "" if rng.random() < 0.35 else (" " if rng.random() < 0.9 else "-")
+    # separators between groups: none, space, hyphen, or the dots of aftermarket and EV plates (KA·53HS·3074);
+    # the label never contains them, so the OCR learns to read through them
+    sep = str(rng.choice(["", " ", "-", "\u00b7", "\u2022"], p=[0.3, 0.45, 0.08, 0.1, 0.07]))
+    if sep and len(groups) == 4 and layout != "bh" and rng.random() < 0.4:
+        groups = [groups[0], groups[1] + groups[2], groups[3]]  # KA·53HS·3074: RTO and series run together
     right = W - int(0.03 * W)
     if two_line:
         if layout == "bh":

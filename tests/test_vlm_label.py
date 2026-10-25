@@ -170,3 +170,25 @@ def test_vlm_reads_plates_the_ocr_cannot(ollama):
     eng.cfg.vlm.read_unreadable = False
     _FakeOllama.answer = {"plate": "KA05MX3021", "readable": True}
     assert eng._maybe_verify(PlateRead(None, 0.02, "free", abstained=True), CROP).text is None
+
+
+def _plate_scene(bg, fg):
+    """A plate with characters inside a larger crop of vehicle body, like a padded detector crop."""
+    img = np.full((90, 300, 3), (150, 170, 160), np.uint8)
+    cv2.rectangle(img, (40, 35), (260, 60), bg, -1)
+    cv2.putText(img, "KA53HS3074", (48, 56), cv2.FONT_HERSHEY_SIMPLEX, 0.7, fg, 2)
+    return img
+
+
+def test_vlm_view_crops_to_characters_and_fixes_polarity():
+    from drishti.geometry import dark_text_on_light, text_band
+
+    green = _plate_scene((60, 120, 30), (250, 250, 250))  # BGR: white characters on green
+    band = text_band(green)
+    assert band.shape[0] < green.shape[0] / 2 and band.shape[1] > 150  # the character row, not the body
+    neg = dark_text_on_light(band)
+    assert neg.mean() > band.mean()  # light plate, dark characters
+
+    white = _plate_scene((240, 240, 240), (20, 20, 20))
+    wb = text_band(white)
+    assert dark_text_on_light(wb) is wb  # already dark-on-light: untouched

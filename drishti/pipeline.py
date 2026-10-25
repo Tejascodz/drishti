@@ -31,7 +31,8 @@ from .formats import FormatGrammar
 from .health import CameraHealth
 from .tolling import confidence_level, toll_decision
 from .fusion import Observation, align_and_stack, combined_confidence, fuse
-from .geometry import corners_from_keypoints, crop_box, deskew, level_plate, stitch_two_lines, two_line_views, warp_quad
+from .geometry import (corners_from_keypoints, crop_box, dark_text_on_light, deskew, level_plate, stitch_two_lines,
+                       text_band, two_line_views, warp_quad)
 from .ocr import SlotOCR
 from .ocr.vlm import from_config as vlm_from_config
 from .privacy import blur_region, plate_digest
@@ -297,7 +298,7 @@ class Drishti:
             return self._vlm_read_unreadable(read, crop)
         if read.confidence >= self.cfg.vlm.trigger_below:
             return read
-        answer = self.vlm.verify(crop, read.text, read.alternatives, self.grammar)
+        answer = self.vlm.verify(self._vlm_view(crop), read.text, read.alternatives, self.grammar)
         if answer:
             if answer != read.text:
                 read.raw_text = read.raw_text or read.text
@@ -308,6 +309,11 @@ class Drishti:
             read.level = confidence_level(read.confidence, (self.cfg.get("tolling") or {}).get("levels"))
         return read
 
+    @staticmethod
+    def _vlm_view(crop: np.ndarray) -> np.ndarray:
+        """What the VLM is shown: just the characters' band, as dark characters on a light plate."""
+        return dark_text_on_light(text_band(crop))
+
     def _vlm_read_unreadable(self, read: PlateRead, crop: np.ndarray) -> PlateRead:
         """The OCR found nothing legible: ask the VLM to read the crop on its own. Its answer counts
         only if it is a valid plate under the active grammar, and it is always capped at
@@ -316,7 +322,7 @@ class Drishti:
         if not vc.get("read_unreadable", True) or crop is None or crop.size == 0:
             return read
         try:
-            ans = self.vlm.read(crop)
+            ans = self.vlm.read(self._vlm_view(crop))
         except Exception as exc:  # network / server errors must never break recognition
             log.warning("VLM read skipped: %s", exc)
             return read

@@ -150,6 +150,19 @@ The best data of all is a few hundred labelled crops from your own lane camera:
 record a day of video, run `drishti video ... --store`, and label the saved
 evidence crops with `drishti label --crops`.
 
+## Plate styles the public OCR has not seen
+
+The public fast-plate-ocr models read standard white and yellow plates well but not green EV plates
+with separator dots and emblems (`KA·53HS·3074` on a scooter): every one of its seven models misread
+such a plate, even from hand-placed tight crops and colour-inverted copies. The synthetic generator
+therefore renders, alongside HSRP layouts:
+
+* green EV plates (white or yellow characters) at a higher share,
+* separators: spaces, hyphens and dots, including `KA·53HS·3074` grouping,
+* aftermarket emblems at the left edge and long thin strips (about 7:1),
+
+always labelled with the plain characters, so a fine-tuned OCR learns to read through them.
+
 ## Data rules that matter more than the model
 
 * **Split by plate (vehicle), not by image.** Frames of the same car leak
