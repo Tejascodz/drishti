@@ -27,6 +27,7 @@ _DRISHTI = "https://github.com/Tejascodz/drishti/releases/download"
 # so a replaced or tampered release asset is never loaded.
 _SHA256 = {
     "plate_yolo26s_in_960.onnx": "2efa62d1abd2c34449d9dd9d6ada55f34c9679766de7e60c1c363c29c0a916a5",
+    "realesr_general_x4v3.onnx": "f18df92fcc2e2f0e787599e99c98f2a225d48e495ba08a84d8b7e716b8661be8",
     "cct_s_v1_global.keras": "6960906f834b5acedb80897c1db9dda0444ec03236be00c3461051a843383b90",
     "cct_s_v1_global.onnx": "5c95b3231fff415b05cb48a3a39fab7c009364c2ee441bef092e0162ab75ea74",
     "cct_s_v1_global_plate_config.yaml": "8ade332ef026520a3360a7c154cc10be664bee25482f3997bce34a7007b4786e",
@@ -54,7 +55,7 @@ _SHA256 = {
 
 @dataclass(frozen=True)
 class ModelSpec:
-    kind: str  # plate_detector | vehicle_detector | ocr
+    kind: str  # plate_detector | vehicle_detector | ocr | super_resolution
     files: dict[str, str]  # role -> url
     fmt: str
     license: str
@@ -80,6 +81,14 @@ REGISTRY["drishti-yolo26s-in-960"] = ModelSpec(
     fmt="yolo-raw",
     license="AGPL-3.0 (trained with Ultralytics YOLO26)",
     notes="Drishti's plate detector for Indian roads, 960 px; default.",
+)
+
+REGISTRY["realesr-general-x4v3"] = ModelSpec(
+    kind="super_resolution",
+    files={"model": f"{_DRISHTI}/v0.1.0/realesr_general_x4v3.onnx"},
+    fmt="sr-x4",
+    license="BSD-3-Clause (Real-ESRGAN, xinntao)",
+    notes="4x restoration, an extra opinion on small or unsure plates; rebuilt by training/sr/.",
 )
 
 for _name, _res in [("nano", 384), ("small", 512), ("medium", 576), ("large", 704)]:

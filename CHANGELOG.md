@@ -20,6 +20,10 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
 - Deblocking retry for unreadable plates: 3x upscale + non-local-means denoising.
 - The local VLM reads plates the OCR cannot read at all (`vlm.read_unreadable`); answers must be
   valid plates and are capped at Poor confidence for manual review.
+- Super-resolution on by default (`realesr-general-x4v3`, release v0.1.0, BSD-3-Clause): restored
+  crops are an extra opinion on small or unsure plates, never a replacement. 48 shrunk/compressed
+  sample cases: 4 -> 5 read; clean photos unchanged.
+- `drishti image --debug DIR` and best guesses for unreadable plates.
 - `scripts/benchmark_degraded.py`: accuracy on shrunk, JPEG-compressed, blurred copies of labelled
   photos.
 

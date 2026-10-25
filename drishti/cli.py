@@ -297,7 +297,7 @@ def cmd_models(args) -> int:
     from .config import load_config
 
     cfg = load_config(args.config)
-    for name in [cfg.models.plate_detector, cfg.models.vehicle_detector, cfg.models.ocr]:
+    for name in [cfg.models.plate_detector, cfg.models.vehicle_detector, cfg.models.ocr, cfg.models.get("sr_model")]:
         if name and name in hub.REGISTRY:
             for role in hub.REGISTRY[name].files:
                 if role == "keras" and not args.with_training:

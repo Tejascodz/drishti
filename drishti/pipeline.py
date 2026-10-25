@@ -49,10 +49,12 @@ log = logging.getLogger(__name__)
 class SuperResolver:
     """Wraps any x2/x4 single-image SR ONNX (NCHW float RGB in [0,1])."""
 
-    def __init__(self, path: str, runtime_cfg: dict):
+    def __init__(self, path: str, runtime_cfg: dict, cache_dir: str | None = None):
+        from . import hub
         from .runtime import make_session
 
-        self.session = make_session(expand_path(path), runtime_cfg)
+        # every crop has a different size, which makes CoreML recompile and stall; CPU is fine here
+        self.session = make_session(hub.resolve(path, "model", cache_dir), runtime_cfg, allow_coreml=False)
         self.input_name = self.session.get_inputs()[0].name
 
     def __call__(self, crop: np.ndarray) -> np.ndarray:
@@ -88,7 +90,7 @@ class Drishti:
         region = str(c.recognition.region)
         self.mode = "free" if region in ("generic", "free", "none") else str(c.recognition.get("mode", "auto"))
         self.grammar = FormatGrammar.from_pack(None if self.mode == "free" else region, self.ocr.alphabet, self.ocr.pad_char)
-        self.sr = SuperResolver(c.models.sr_model, rt) if c.models.get("sr_model") else None
+        self.sr = SuperResolver(c.models.sr_model, rt, cache) if c.models.get("sr_model") else None
         self.vlm = vlm_from_config(c.vlm, region) if c.vlm.enabled else None
         calib_path = c.recognition.get("calibration")
         self.calib = json.loads(expand_path(calib_path).read_text()) if calib_path else None

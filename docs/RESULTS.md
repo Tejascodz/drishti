@@ -112,6 +112,14 @@ non-local-means denoising, which removes JPEG blocks (`imaging.deblock_zoom`).
 Tested and not kept: Lanczos upscaling with unsharp masking, CLAHE alone, denoising before
 upscaling, and running the retries on the tight crop as well (35% slower, no extra read).
 
+Super-resolution (Real-ESRGAN general x4v3, on by default) added as an extra opinion, not a
+replacement: 48 cases 4 → **5** read; on a real 126 px compressed plate (HR98U0864) the OCR stops
+dropping the last digit and confidence rises from 0.45 to 0.56; clean photos unchanged. Replacing
+the crops with restored ones instead made a 54 px plate worse, which is why restorations only vote.
+Test-time augmentation (reading 9–75 shifted, scaled and rotated copies and averaging their
+log-probabilities, as competition systems do across real video frames) gave no gain on single
+photos: copies of one image add no new information.
+
 Below about 60 px with heavy compression, characters are 4–5 px wide and classical image
 processing cannot restore them; the 4 clean photos are unaffected (4 / 4, mean confidence
 0.946 → 0.960). What can: the local VLM, which now also reads plates the OCR gives up on

@@ -22,7 +22,9 @@ models:
   # Hub name, or a path to a slot-OCR ONNX (fast-plate-ocr compatible).
   ocr: cct-s-v2-global-model
   ocr_config: null             # plate config YAML when `ocr` is a local path
-  sr_model: null               # optional super-resolution ONNX: an extra opinion on hard plates (training/sr/)
+  # Super-resolution: restored crops are an extra opinion on small or unsure plates, outvoted when
+  # they disagree with the original views. null disables it. Hub name or ONNX path.
+  sr_model: realesr-general-x4v3
 
 detection:
   plate_conf: 0.30

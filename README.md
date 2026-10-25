@@ -76,7 +76,7 @@ Python 3.10 or newer.
 git clone https://github.com/Tejascodz/drishti.git && cd drishti
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[server,track]"
-drishti models pull                     # plate detector, OCR, vehicle model: ~165 MB, checksum-verified
+drishti models pull                     # detector, OCR, super-resolution, vehicle model: ~170 MB, checksum-verified
 bash scripts/fetch_samples.sh samples   # 4 labelled Indian road photos
 
 drishti image samples --save-vis out    # prints each plate, writes annotated copies to out/
@@ -85,7 +85,8 @@ drishti eval samples/labels.csv         # recognition rate, precision, character
 
 The default plate detector is Drishti's YOLO26-s model trained for Indian roads, downloaded
 from this repository's [releases](https://github.com/Tejascodz/drishti/releases); the OCR is the
-public fast-plate-ocr CCT-S v2 model.
+public fast-plate-ocr CCT-S v2 model; small or unsure plates also get a Real-ESRGAN super-resolved
+crop as an extra opinion (`models.sr_model`, `null` to disable).
 
 NVIDIA GPUs: `pip install -e ".[gpu]"` and `--config configs/gpu-server.yaml` (TensorRT,
 FP16). Apple silicon: `--config configs/apple-silicon.yaml` runs the detector on CoreML; the
@@ -309,5 +310,7 @@ Models downloaded at runtime keep their own licences. The default plate detector
 (`drishti-yolo26s-in-960`, from this repository's releases) was trained with Ultralytics YOLO26
 and is AGPL-3.0; a closed product needs an Ultralytics enterprise licence, or can switch to the
 MIT-licensed `yolo-v9-s-608-license-plate-end2end` with `models.plate_detector`. fast-plate-ocr
-OCR models and open-image-models detectors are MIT, RF-DETR is Apache-2.0. Datasets: Indian licence plates (Kaggle, CC0), Roboflow
+OCR models and open-image-models detectors are MIT, RF-DETR is Apache-2.0, and the super-resolution
+model (Real-ESRGAN realesr-general-x4v3, converted by `training/sr/export_realesrgan.py`) is BSD-3-Clause,
+© Xintao Wang. Datasets: Indian licence plates (Kaggle, CC0), Roboflow
 License Plate Recognition v13 (CC BY 4.0).
