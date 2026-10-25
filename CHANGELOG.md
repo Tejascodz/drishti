@@ -23,6 +23,10 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
 - Super-resolution on by default (`realesr-general-x4v3`, release v0.1.0, BSD-3-Clause): restored
   crops are an extra opinion on small or unsure plates, never a replacement. 48 shrunk/compressed
   sample cases: 4 -> 5 read; clean photos unchanged.
+- OCR training notebook v3: pre-flight checks (GPU, internet, project version, fonts), unusable labels
+  skipped, a green EV validation set, colour/polarity augmentation, a time guard under Kaggle's 12 h
+  limit, one retry on a failed run, and the model zipped even if export fails.
+- `render_plates.py --schemes`: render only chosen colour schemes (e.g. `ev_private,ev_commercial`).
 - `drishti image --debug DIR` and best guesses for unreadable plates.
 - The VLM is shown only the characters' band (densest vertical edges), as dark characters on a light
   plate: green EV, black rental and army plates become greyscale negatives.

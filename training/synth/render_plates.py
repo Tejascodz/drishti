@@ -147,9 +147,12 @@ def _draw_line(draw: ImageDraw.ImageDraw, text: str, box: tuple[int, int, int, i
     draw.text((x, y), text, font=f, fill=color)
 
 
-def render(groups: list[str], layout: str, rng: np.random.Generator, fonts: list[str], two_line: bool) -> np.ndarray:
-    """Render an RGBA plate image."""
-    if layout == "army":
+def render(groups: list[str], layout: str, rng: np.random.Generator, fonts: list[str], two_line: bool,
+           schemes: list[str] | None = None) -> np.ndarray:
+    """Render an RGBA plate image. `schemes` limits the colour schemes, e.g. to the green EV ones."""
+    if schemes:
+        scheme = str(rng.choice(schemes))
+    elif layout == "army":
         scheme = "army"
     elif layout == "diplo":
         scheme = "diplomatic"
@@ -231,9 +234,14 @@ def main() -> None:
                     help="fraction seen from a camera above the lane (toll plaza / gantry geometry)")
     ap.add_argument("--ir-frac", type=float, default=0.15, help="fraction rendered as infrared night frames")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--schemes", default="", help=f"only these colour schemes, comma separated: {', '.join(SCHEMES)}")
     ap.add_argument("--preview", type=int, default=0, help="also write a grid of N samples")
     a = ap.parse_args()
 
+    schemes = [x for x in a.schemes.split(",") if x]
+    unknown = sorted(set(schemes) - set(SCHEMES))
+    if unknown:
+        ap.error(f"unknown scheme(s) {', '.join(unknown)}; choose from {', '.join(SCHEMES)}")
     rng = np.random.default_rng(a.seed)
     fonts = _fonts()
     sampler = TextSampler(rng)
@@ -250,7 +258,7 @@ def main() -> None:
             for i in range(count):
                 label, groups, layout = sampler.sample()
                 two = rng.random() < a.two_line_frac
-                plate = render(groups, layout, rng, fonts, two)
+                plate = render(groups, layout, rng, fonts, two, schemes)
                 crop = degrade_plate(plate, rng, a.hard, overhead=rng.random() < a.overhead_frac,
                                      ir=rng.random() < a.ir_frac)
                 name = f"{split}_{i:07d}.jpg"

@@ -1,7 +1,7 @@
 """Write the Albumentations pipeline used for OCR fine-tuning.
 
 Real crops get the same capture-chain corruptions the synthesiser applies, at a
-lower rate, plus coarse dropout (partial occlusion) which the ICPR 2026 LRLPR
+lower rate, colour/polarity swaps, plus coarse dropout (partial occlusion) which the ICPR 2026 LRLPR
 winners found important for robustness.
 
     python training/ocr/make_augmentation.py training/ocr/augment.yaml
@@ -21,6 +21,9 @@ def build() -> A.Compose:
             A.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.6),
             A.RandomGamma(gamma_limit=(70, 140), p=0.3),
             A.HueSaturationValue(hue_shift_limit=8, sat_shift_limit=20, val_shift_limit=15, p=0.3),
+            # colour and polarity changes so the text, not the plate colour, is what gets learned:
+            # white-on-green EV, yellow-on-black rental and grey night frames all read the same way
+            A.OneOf([A.ToGray(), A.ChannelShuffle(), A.InvertImg()], p=0.12),
             A.Downscale(scale_range=(0.35, 0.8), p=0.3),
             A.GaussNoise(std_range=(0.02, 0.08), p=0.3),
             A.ImageCompression(quality_range=(20, 90), p=0.4),

@@ -100,8 +100,11 @@ scores again on the **same real validation plates** and on 3,000 hard synthetic 
 Settings for both: *Accelerator* **GPU T4**, *Internet* **On**, then
 *Save Version → Save & Run All (Commit)* so the run continues after you close the browser.
 
-Check the OCR log starts with `DRISHTI OCR v2` and reports
-`validation: … real + 3000 hard synthetic plates`. Version 1 validated on the real plates
+Check the OCR log starts with `DRISHTI OCR v3` and reports
+`validation: … real + 3000 hard synthetic + 500 green plates`. The first cell checks the GPU, internet,
+project version and fonts and stops within minutes with a plain message if anything is missing; training
+ends on its own before Kaggle's 12 h limit and keeps the best epoch. The final table scores the public and
+the fine-tuned OCR on real, hard synthetic and green EV plates. Version 1 validated on the real plates
 only; the public OCR already scores 100% on those easy, auto-labelled plates, so every
 epoch tied, early stopping fired and the first, under-trained epoch was kept.
 

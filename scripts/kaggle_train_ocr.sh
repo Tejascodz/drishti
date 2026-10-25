@@ -7,13 +7,13 @@
 #   bash scripts/kaggle_train_ocr.sh   [kaggle-username] [path/to/labelled/plates]
 #
 # Afterwards:
-#   kaggle kernels status  <user>/drishti-ocr-v2
-#   kaggle kernels output  <user>/drishti-ocr-v2 -p models/ocr_in     # when it says COMPLETE
+#   kaggle kernels status  <user>/drishti-ocr-v3
+#   kaggle kernels output  <user>/drishti-ocr-v3 -p models/ocr_in     # when it says COMPLETE
 set -euo pipefail
 USER_NAME=${1:-${KAGGLE_USER:-tejasss21}}
 REAL=${2:-data/ocr_real}
 DATASET="$USER_NAME/drishti"
-KERNEL="$USER_NAME/drishti-ocr-v2"
+KERNEL="$USER_NAME/drishti-ocr-v3"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
@@ -53,7 +53,7 @@ cp "$ROOT/training/kaggle/drishti_ocr_kaggle.ipynb" "$STAGE/kernel/"
 cat > "$STAGE/kernel/kernel-metadata.json" <<EOF
 {
   "id": "$KERNEL",
-  "title": "drishti-ocr-v2",
+  "title": "drishti-ocr-v3",
   "code_file": "drishti_ocr_kaggle.ipynb",
   "language": "python",
   "kernel_type": "notebook",
