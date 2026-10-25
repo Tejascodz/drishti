@@ -30,7 +30,12 @@ body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-a
 main{{max-width:1100px;margin:0 auto;padding:16px}}
 h1{{font-size:20px}} h2{{font-size:16px;margin:0 0 10px}}
 .photo{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px}}
-.photo>img{{width:100%;max-height:420px;object-fit:contain;background:#000;border-radius:8px}}
+.pair{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
+.pair figure{{margin:0}}
+.pair img{{width:100%;max-height:440px;object-fit:contain;background:#000;border-radius:8px;display:block}}
+.pair figcaption{{color:var(--muted);font-size:13px;margin:0 0 4px}}
+@media (max-width:700px){{.pair{{grid-template-columns:1fr}}}}
+.truth{{font-size:13px;margin-top:4px}} .ok{{color:var(--good);font-weight:600}} .bad{{color:var(--poor);font-weight:600}}
 .plates{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}}
 .plate{{border:1px solid var(--line);border-radius:10px;padding:10px}}
 .plate img{{width:100%;height:90px;object-fit:contain;background:#000;border-radius:6px}}
@@ -39,10 +44,18 @@ h1{{font-size:20px}} h2{{font-size:16px;margin:0 0 10px}}
 .Good{{color:var(--good)}}.Average{{color:var(--avg)}}.Poor{{color:var(--poor)}}
 </style></head><body><main>
 <h1>Plate reads</h1>
-<p class="meta">{summary}. Compare each enlarged crop with the text under it.</p>
+<p class="meta">{summary}. Each photo: original on the left, Drishti's labelled output on the right, every plate enlarged below.</p>
 {body}
 </main></body></html>
 """
+
+
+def _verdict(text: str | None, labels: set[str]) -> str:
+    if text and text in labels:
+        return '<div class="truth ok">matches label</div>'
+    if text:
+        return '<div class="truth bad">not in labels</div>'
+    return ""
 
 
 def main() -> int:
@@ -51,13 +64,21 @@ def main() -> int:
     ap.add_argument("--config", action="append", default=None, help="e.g. models/drishti.yaml")
     ap.add_argument("--out", default="review")
     ap.add_argument("--providers", default="cpu")
+    ap.add_argument("--labels", help="optional labels CSV (image_path,plate_text) to mark each read right or wrong")
     a = ap.parse_args()
 
     cfg = load_config(a.config, {"runtime": {"providers": a.providers}, "models": {"vehicle_detector": None}})
     eng = Drishti(cfg)
     out = Path(a.out)
     (out / "img").mkdir(parents=True, exist_ok=True)
-    blocks, n_img, n_plates = [], 0, 0
+    truth: dict[str, set[str]] = {}
+    if a.labels:
+        import csv
+
+        with open(a.labels, newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                truth[Path(row["image_path"]).name] = {t.strip().upper() for t in row["plate_text"].split("|") if t.strip()}
+    blocks, n_img, n_plates, n_right = [], 0, 0, 0
     for path in iter_images(a.inputs):
         img = cv2.imread(str(path))
         if img is None:
@@ -65,7 +86,9 @@ def main() -> int:
         n_img += 1
         res = eng.recognize(img)
         stem = f"{n_img:03d}_{path.stem}"
+        cv2.imwrite(str(out / "img" / f"{stem}_original.jpg"), img)
         cv2.imwrite(str(out / "img" / f"{stem}.jpg"), eng.annotate(img, res))
+        labels = truth.get(path.name)
         cards = []
         for k, r in enumerate(res, 1):
             n_plates += 1
@@ -74,19 +97,32 @@ def main() -> int:
                 cv2.imwrite(str(out / "img" / crop_name), r.crop)
             text = r.read.text or "unreadable"
             alts = ", ".join(t for t, _ in r.read.alternatives[1:4] if t != r.read.text)
+            if not r.read.text:  # unreadable: show what the OCR leaned towards, clearly as a guess
+                guesses = list(dict.fromkeys(g for g in [r.read.raw_text] + [t for t, _ in r.read.alternatives] if g))
+                alts = f"best guess {', '.join(guesses[:3])} (very unsure)" if guesses else ""
             cards.append(
                 f'<div class="plate"><img src="img/{crop_name}" alt="plate {k} crop">'
                 f'<div class="text">{html.escape(text)}</div>'
                 f'<div class="meta"><span class="{r.read.level}">{r.read.confidence:.2f} {r.read.level}</span>'
                 f' · {int(round(r.bbox.w))} px wide{" · rescued" if r.read.rescued else ""}</div>'
-                + (f'<div class="meta">other guesses: {html.escape(alts)}</div>' if alts else "")
+                + (f'<div class="meta">{"" if not r.read.text else "other guesses: "}{html.escape(alts)}</div>' if alts else "")
+                + (_verdict(r.read.text, labels) if labels is not None else "")
                 + "</div>"
             )
         plates = f'<div class="plates">{"".join(cards)}</div>' if cards else '<p class="meta">no plate found</p>'
-        blocks.append(f'<section class="photo"><h2>{html.escape(path.name)}</h2>'
-                      f'<img src="img/{stem}.jpg" alt="{html.escape(path.name)} annotated">{plates}</section>')
+        if labels is not None:
+            n_right += sum(1 for r in res if r.read.text in labels)
+            missed = labels - {r.read.text for r in res}
+            if missed:
+                plates += f'<p class="truth bad">not read: {html.escape(", ".join(sorted(missed)))}</p>'
+        name = html.escape(path.name)
+        blocks.append(f'<section class="photo"><h2>{name}</h2><div class="pair">'
+                      f'<figure><figcaption>Original</figcaption><img src="img/{stem}_original.jpg" alt="{name} original"></figure>'
+                      f'<figure><figcaption>Drishti output</figcaption><img src="img/{stem}.jpg" alt="{name} labelled"></figure>'
+                      f'</div>{plates}</section>')
         print(f"{path.name}: {', '.join((r.read.text or '?') for r in res) or 'no plate'}", flush=True)
-    (out / "index.html").write_text(PAGE.format(summary=f"{n_img} photos, {n_plates} plates", body="\n".join(blocks)),
+    summary = f"{n_img} photos, {n_plates} plates" + (f", {n_right} labelled plates read correctly" if truth else "")
+    (out / "index.html").write_text(PAGE.format(summary=summary, body="\n".join(blocks)),
                                     encoding="utf-8")
     print(f"open {out / 'index.html'}")
     return 0

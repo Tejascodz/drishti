@@ -16,6 +16,6 @@ image_path,plate_text
 in_gj_street.jpg,GJ02CG3862
 in_tn_highway.jpg,TN22DA5047
 in_dl_dashcam.png,DL1CR9541
-in_hr_traffic.jpg,HR85A0398
+in_hr_traffic.jpg,HR85A0398|HP839617
 EOF
 echo "samples in $DIR  ->  drishti image $DIR   |   drishti eval $DIR/labels.csv"
