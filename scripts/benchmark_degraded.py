@@ -56,6 +56,11 @@ def main() -> int:
     eng = Drishti(load_config(a.config, over))
     labels = Path(a.labels)
     rows = list(csv.DictReader(open(labels, newline="", encoding="utf-8")))
+    missing = [r["image_path"] for r in rows if not (labels.parent / r["image_path"]).exists()]
+    if missing:
+        print(f"missing images listed in {labels}: {', '.join(missing)}")
+        print("for samples/, run: bash scripts/fetch_samples.sh samples")
+        return 1
 
     stats: dict[int, list] = defaultdict(list)
     lat = []
