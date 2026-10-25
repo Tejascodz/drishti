@@ -40,7 +40,6 @@ _SHA256 = {
     "cct_xs_v2_global.keras": "0716717772b1f8d25b3c227e1e65e7f42e63900ec017059b4a32155488735ffd",
     "cct_xs_v2_global.onnx": "8031afb5fdc6b4d80462c9d542f1284ebd2cfddf5dbacd62609848d7e2855f44",
     "cct_xs_v2_global_plate_config.yaml": "0335c74a305173bb6f393efed0fde03cadeaa0b649ed8e19f431016d8232d0a6",
-    "rf-detr-large-704-coco.onnx": "9897fcdf13040c229d8adb0ac8d0dd8e445d12fa8c37eac7bc91f37d361b44bc",
     "rf-detr-medium-576-coco.onnx": "6a740726ea074cb8bcf0fab34c7b3e8e80a13939d8557d4fe50a59b35f2455ca",
     "rf-detr-nano-384-coco.onnx": "fdcdd1c566ed4ab4d3700ca1ce6f03edadfec2a0655432e40e4c2734623feaec",
     "rf-detr-small-512-coco.onnx": "674fb2fe151f49f569de3f3e91f512cb2b8159ad37c65223334a5cc3dc40febd",
@@ -91,7 +90,7 @@ REGISTRY["realesr-general-x4v3"] = ModelSpec(
     notes="4x restoration, an extra opinion on small or unsure plates; rebuilt by training/sr/.",
 )
 
-for _name, _res in [("nano", 384), ("small", 512), ("medium", 576), ("large", 704)]:
+for _name, _res in [("nano", 384), ("small", 512), ("medium", 576)]:
     REGISTRY[f"rf-detr-{_name}-{_res}-coco"] = ModelSpec(
         kind="vehicle_detector",
         files={"model": f"{_OIM}/rf-detr-{_name}-{_res}-coco.onnx"},
