@@ -65,7 +65,8 @@ plate further back is reported as unreadable, its guesses shown separately and n
 
 <sub>The open problem: a green EV plate with dots and an emblem (KA·53HS·3074). The colour, grayscale,
 enhanced and binarised views above are all clear to a person, but the public OCR has never seen this style
-and reads none of them. The OCR notebook v3 fine-tune trains on exactly these styles.</sub>
+and reads none of them. A fine-tune on synthetic plates of this style scored far higher on synthetic
+validation but read real photos worse, so it was not adopted; real labelled green plates are needed.</sub>
 
 Method, data and every intermediate experiment: [`docs/RESULTS.md`](docs/RESULTS.md).
 The labelled sets are small; treat the reading results as smoke tests until you run
@@ -348,7 +349,9 @@ Use ANPR only where you are permitted to.
 * The bundled OCR is the public global model; the first Indian fine-tuning run is not yet
   better (see [Results](#results)).
 * Green EV plates with dotted separators or emblems (e.g. `KA·53HS·3074`) are not read by
-  the public OCR; the v3 fine-tune trains on these styles.
+  the public OCR. Fine-tuning on synthetic plates raised synthetic green accuracy from 27% to
+  65% but made reads on real photos worse, so it was not adopted: real labelled green plates are
+  the missing piece.
 * Plates below about 60 px wide are at the information limit: super-resolution and rescue
   views help a little, but cannot recover characters that are not in the pixels.
 * Small two-line plates (two-wheelers at a distance) are the weakest case.
