@@ -159,7 +159,9 @@ class Drishti:
             if ee != "auto" or sharpness(mid) < float(self.imaging.get("edge_enhance_below", 400)):
                 views.append(("enhanced", edge_enhance(mid), 1.0))
         if self.sr is not None and det.bbox.h < oc.sr_below_height:
-            views = [(n, self.sr(v), w) for n, v, w in views]
+            # restored copies are extra opinions, never replacements: super-resolution can invent
+            # strokes, and the consistency-gated fusion outvotes a restoration that disagrees
+            views += [(f"sr-{n}", self.sr(v), w) for n, v, w in views[:2]]
         return views, quad, two_line
 
     def _read_many(self, frame: np.ndarray, dets: list[Detection], frame_weight: bool = False) -> list[_Read | None]:
@@ -230,7 +232,10 @@ class Drishti:
             r = reads[i]
             start = len(flat)
             names = []
-            for name, fn in RESCUE_VIEWS.items():
+            rescue = dict(RESCUE_VIEWS)
+            if self.sr is not None:
+                rescue["sr"] = self.sr
+            for name, fn in rescue.items():
                 try:
                     img = fn(r.crop)
                 except cv2.error:
