@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: System packages
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-extra libgl1
+      - name: Install
+        run: pip install -e ".[server,track,dev]"
+      - name: Lint
+        run: ruff check drishti scripts tests training
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/drishti
+          key: drishti-models-${{ hashFiles('drishti/hub.py') }}
+      - name: Test
+        run: pytest -rs

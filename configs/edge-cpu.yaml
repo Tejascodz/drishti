@@ -1,0 +1,15 @@
+# CPU-only / small edge boxes (Raspberry Pi 5, Intel NUC, older laptops).
+# Smaller detector input, the extra-small OCR, two crop views, no vehicle model.
+models:
+  plate_detector: yolo-v9-t-384-license-plate-end2end
+  vehicle_detector: null
+  ocr: cct-xs-v2-global-model
+ocr:
+  views:
+    - [0.05, 0.12]
+    - [0.14, 0.22]
+detection:
+  tiling: off
+video:
+  every_n: 2
+  top_k_frames: 6

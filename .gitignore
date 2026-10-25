@@ -1,0 +1,37 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Model weights: download with `drishti models pull` or copy your own into models/
+*.onnx
+*.keras
+*.pt
+*.mlpackage/
+
+# Datasets and labelled plates: personal data, keep out of the repo
+data/
+samples/*.jpg
+samples/*.jpeg
+samples/*.png
+
+# Runtime output
+drishti.db*
+drishti_crops/
+out/
+review*/
+test_images/
+calibration.json
+*.jsonl
+runs/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+_to_delete/

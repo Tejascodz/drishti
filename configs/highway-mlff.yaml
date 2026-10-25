@@ -1,0 +1,39 @@
+# Barrier-free / multi-lane free-flow (MLFF) gantry or highway camera: vehicles pass at
+# 60-100 km/h, so each plate is visible for only a few frames.
+#
+#   drishti --config models/drishti.yaml --config configs/highway-mlff.yaml video rtsp://gantry/lane1 --store
+#
+# Camera side matters more than software here: shutter 1/1000 s or faster (no motion blur),
+# global shutter if possible, 850 nm IR flash at night, 25+ fps, plate >= 30 px tall.
+zones:
+  trigger_line: [[0.0, 0.70], [1.0, 0.70]]   # placeholder: where the plate is largest and sharpest
+  trigger_direction: any
+  emit_uncrossed: true             # a fast plate can vanish before the line; still report it
+detection:
+  plate_conf: 0.30
+  tiling: auto                     # several lanes in one wide frame: small plates
+  min_plate_height: 10
+video:
+  every_n: 1                       # never skip frames at speed
+  vehicle_every_n: 2
+  min_hits: 1                      # a plate may be readable in a single frame
+  max_age: 6                       # fast vehicles do not come back; free tracks quickly
+  track_buffer: 0.6                # large frame-to-frame jumps still associate
+  track_buffer_lost: 0.9
+  match_thresh: 0.90
+  top_k_frames: 5
+  mf_restore: true
+  early_emit_confidence: 0.90
+dedupe:
+  enabled: true                    # overlapping cameras on one gantry: one record per vehicle
+  window_s: 8
+  cameras: []                      # list the gantry's cameras if several gantries share one store
+tolling:
+  auto_min: 0.95                   # IHMCL: camera VRN charged automatically only above 95% confidence
+  min_plate_width_px: 100
+recognition:
+  region: india
+  mode: auto
+  min_confidence: 0.70             # below this the event is flagged for review / tag cross-check
+storage:
+  save_crops: true

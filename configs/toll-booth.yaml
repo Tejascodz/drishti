@@ -1,0 +1,33 @@
+# Toll plaza lane camera: mounted high above the lane, looking down at the FRONT
+# plate of approaching vehicles, one lane per camera.
+#
+# 1. drishti zones rtsp://cam/stream --out zones.jpg       (frame with a 0-1 grid)
+# 2. set roi (the lane) and trigger_line (just before the barrier) below
+# 3. drishti --config configs/toll-booth.yaml video rtsp://cam/stream --camera lane-3 --store
+zones:
+  roi: [[0.15, 0.25], [0.85, 0.25], [1.0, 1.0], [0.0, 1.0]]   # placeholder: this lane only
+  trigger_line: [[0.05, 0.80], [0.95, 0.80]]                  # placeholder: just before the barrier
+  trigger_direction: down          # approaching vehicles move down the image
+  emit_uncrossed: false            # queued vehicles are reported when they actually cross
+detection:
+  plate_conf: 0.35
+  tiling: off                      # one lane, plates are large
+  min_plate_height: 12
+video:
+  every_n: 1                       # vehicles are slow: read every frame, fuse all of them
+  vehicle_every_n: 3
+  min_hits: 3
+  max_age: 15                      # ~0.5 s at 25-30 fps: stop-and-go queues keep their track
+  top_k_frames: 10
+  mf_restore: true
+recognition:
+  region: india
+  mode: auto
+  min_confidence: 0.70             # below this the event is flagged for the operator
+vlm:
+  enabled: false                   # set true with Ollama running for a second opinion on hard plates
+  trigger_below: 0.70
+privacy:
+  retention_days: 90
+storage:
+  save_crops: true                 # evidence image per vehicle

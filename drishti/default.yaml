@@ -1,0 +1,134 @@
+# Drishti default configuration. Every key can be overridden by a user YAML
+# (drishti --config my.yaml ...) or by environment variables DRISHTI__SECTION__KEY.
+
+runtime:
+  # auto picks the fastest available ONNX Runtime provider:
+  # TensorRT > CUDA > CoreML > OpenVINO > DirectML > CPU
+  providers: auto
+  intra_op_threads: 0          # 0 = let ONNX Runtime decide
+  trt_fp16: true
+  trt_cache_dir: ~/.cache/drishti/trt
+
+models:
+  cache_dir: ~/.cache/drishti
+  # Hub name or a path to an ONNX file. Supported plate detector outputs:
+  #   YOLOv9 end-to-end (open-image-models), YOLO26 end-to-end detect/pose,
+  #   raw Ultralytics heads (NMS applied here).
+  plate_detector: yolo-v9-s-608-license-plate-end2end
+  # null disables vehicle detection (plates are still read and tracked).
+  vehicle_detector: rf-detr-nano-384-coco
+  # Hub name, or a path to a slot-OCR ONNX (fast-plate-ocr compatible).
+  ocr: cct-s-v2-global-model
+  ocr_config: null             # plate config YAML when `ocr` is a local path
+  sr_model: null               # optional x2/x4 super-resolution ONNX for tiny crops
+
+detection:
+  plate_conf: 0.30
+  vehicle_conf: 0.40
+  min_plate_height: 10         # px; smaller detections are tracked but not read
+  tiling: auto                 # off | on | auto  (slice large frames for small plates)
+  tile_overlap: 0.2
+
+imaging:
+  bad_pixel: on                # defective pixel correction (IHMCL "BPC"): hot / dead / stuck pixels
+  bpc_threshold: 40            # grey levels above / below every neighbour
+  bpc_cluster: true            # also 2x2 clusters smeared by demosaicing
+  bpc_learn: true              # video: learn the camera's own defective pixels over time
+  bpc_map_dir: ~/.cache/drishti/bad_pixels   # learned map per camera (<camera>.npy)
+  edge_enhance: off            # off | auto | on: extra sharpened OCR view (IHMCL "edge enhancement")
+  edge_enhance_below: 400      # auto: only for crops softer than this (Laplacian variance at 48 px)
+
+ocr:
+  # Crop views read per detection; the decoder fuses the consistent ones.
+  # Values are (horizontal, vertical) padding as a fraction of box size.
+  views:
+    - [0.04, 0.10]
+    - [0.10, 0.18]
+    - [0.17, 0.27]
+  rectify: true                # perspective-correct using detector corners or estimated quad
+  two_line: auto               # auto | off  (split-and-stitch stacked plates)
+  sr_below_height: 24          # apply sr_model when crop height is below this
+  rescue: true                 # unreadable / low-confidence plates: retry zoomed, contrast, brightness, grey
+  rescue_below: 0.80           # retry plates read below this confidence
+  rescue_max_confidence: 0.94  # a rescued read is a suggestion for review, never an automatic charge
+
+tolling:
+  levels: {good: 0.95, average: 0.80}   # confidence bands reported with every read; below average = Poor
+  auto_min: 0.95               # the camera VRN is charged automatically only above this confidence
+  min_plate_width_px: 100      # one-line plate width guideline (100-150 px); narrower is flagged
+
+health:
+  enabled: true                # dark / glare / soft (dirty window) / blocked / frozen / moved / sensor defects
+  check_every_s: 1.0
+  dark_below: 12               # mean grey level
+  overexposed_above: 0.25      # fraction of clipped pixels
+  soft_ratio: 0.30             # sharpness below this fraction of the camera's own baseline
+  frozen_after_s: 10
+  shift_frac: 0.02             # view moved by more than 2% of the frame width
+  persist_checks: 3
+
+dedupe:
+  enabled: false               # overlapping cameras on one gantry: mark repeat records of one vehicle
+  window_s: 10
+  cameras: []                  # cameras that overlap; empty = every other camera writing to the same store
+  max_distance: 1.0            # confusion-weighted edit distance (O~0, B~8 cost less)
+
+recognition:
+  region: india                # india | brazil | generic | path/to/pack.yaml
+  mode: auto                   # strict: always a valid plate | auto: fall back for foreign plates
+  auto_fallback_nats: 7.0      # (auto) fall back to free decoding if the format costs more than this
+  calibration: null            # JSON from `drishti calibrate` (logistic confidence model)
+  min_confidence: 0.55         # below => low_confidence flag
+  abstain_below: 0.10          # below => text is withheld
+  top_k_alternatives: 5
+
+video:
+  every_n: 1                   # process every n-th frame
+  vehicle_every_n: 2
+  track_high_thresh: 0.45
+  track_low_thresh: 0.10
+  new_track_thresh: 0.45
+  match_thresh: 0.85           # max association cost (1 - buffered IoU)
+  max_age: 30                  # frames a lost track survives
+  track_buffer: 0.3            # box expansion for matching (C-BIoU); raise for fast vehicles / low fps
+  track_buffer_lost: 0.5       # second-stage expansion for re-finding lost tracks
+  min_hits: 2                  # reads needed before a track can emit
+  top_k_frames: 8              # best crops kept per track for multi-frame restoration
+  mf_restore: true
+  early_emit_confidence: 0.92  # emit a provisional event once this sure (gates, tolls)
+
+zones:
+  # Fixed cameras (toll plazas, gates). Coordinates are fractions of the frame (0-1)
+  # or pixels; `drishti zones <video>` saves a gridded frame to pick them from.
+  roi: null                    # [[x, y], ...] lane polygon: only plates whose centre is inside are read
+  trigger_line: null           # [[x1, y1], [x2, y2]]: emit the event when the plate crosses it
+  trigger_direction: any       # any | down | up | left | right  (plate motion in the image)
+  emit_uncrossed: true         # with a trigger line, also report vehicles that never crossed it
+
+vlm:
+  # A local vision-language model as a second opinion on low-confidence reads.
+  # Ollama (default):  ollama pull qwen3-vl:2b   (or qwen3-vl:4b with 16 GB RAM)
+  # OpenAI-compatible: backend: openai, endpoint: http://localhost:8080/v1
+  enabled: false
+  backend: ollama
+  endpoint: http://localhost:11434
+  model: qwen3-vl:2b
+  api_key_env: DRISHTI_VLM_KEY
+  trigger_below: 0.60
+  timeout_s: 30.0
+  keep_alive: 10m
+
+privacy:
+  hash_plates: false           # store HMAC-SHA256 instead of plate text
+  hmac_key_env: DRISHTI_HMAC_KEY
+  retention_days: 30
+  blur_non_matches: false      # blur plates not on the watchlist in saved media
+
+storage:
+  db_path: drishti.db
+  save_crops: true
+  crops_dir: drishti_crops
+
+alerts:
+  webhook_url: null            # POST JSON here on a watchlist hit
+  watchlist_max_distance: 1.0  # confusion-weighted edit distance

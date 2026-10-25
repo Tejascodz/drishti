@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drishti-anpr"
+version = "0.1.0"
+description = "Video-first automatic number plate recognition: plate detection, rectification, slot OCR, format-constrained decoding and multi-frame fusion."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Tejas" }]
+keywords = ["anpr", "alpr", "license-plate", "ocr", "computer-vision", "onnx", "india"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Image Recognition",
+]
+dependencies = [
+  "numpy>=1.24",
+  "opencv-python-headless>=4.8",
+  "onnxruntime>=1.17",
+  "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Tejascodz/drishti"
+Documentation = "https://github.com/Tejascodz/drishti#readme"
+Issues = "https://github.com/Tejascodz/drishti/issues"
+Changelog = "https://github.com/Tejascodz/drishti/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+gpu = ["onnxruntime-gpu>=1.17"]
+server = ["fastapi>=0.110", "uvicorn>=0.27", "python-multipart>=0.0.9"]
+track = ["scipy>=1.10"]
+train = ["ultralytics>=8.4.0", "fast-plate-ocr[train]>=1.1", "albumentations>=1.4"]
+dev = ["pytest>=7", "httpx>=0.27", "onnx>=1.15", "pillow>=10", "ruff>=0.6"]
+all = ["drishti-anpr[server,track,dev]"]
+
+[project.scripts]
+drishti = "drishti.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["drishti*"]
+
+[tool.setuptools.package-data]
+"drishti.formats" = ["packs/*.yaml"]
+"drishti" = ["default.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 130
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501", "E702", "E731", "E741"]

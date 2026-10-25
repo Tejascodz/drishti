@@ -1,0 +1,14 @@
+# NVIDIA GPU server (pip install "drishti-anpr[gpu,server]").
+# TensorRT engines are built on first run and cached; FP16 throughout.
+runtime:
+  providers: tensorrt,cuda
+  trt_fp16: true
+models:
+  plate_detector: yolo-v9-s-608-license-plate-end2end   # or your YOLO26-pose export
+  vehicle_detector: rf-detr-small-512-coco
+  ocr: cct-s-v2-global-model                           # or your fine-tuned Indian OCR
+detection:
+  tiling: auto          # slice 4K frames so distant plates stay detectable
+video:
+  every_n: 1
+  vehicle_every_n: 1

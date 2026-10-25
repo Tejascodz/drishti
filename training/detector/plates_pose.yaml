@@ -1,0 +1,11 @@
+# Ultralytics dataset config: plate boxes + 4 corner keypoints.
+# Merge several converted sources by listing their image folders.
+path: data/plates_pose
+train:
+  - images/train
+val:
+  - images/val
+kpt_shape: [4, 3]          # TL, TR, BR, BL with visibility
+flip_idx: [1, 0, 3, 2]     # horizontal flip swaps left/right corners
+names:
+  0: plate

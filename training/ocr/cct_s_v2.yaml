@@ -1,0 +1,41 @@
+# CCT-S v2 architecture from fast-plate-ocr (MIT). Kept identical so the public
+# global weights load for fine-tuning.
+model: cct
+
+rescaling:
+  scale: 0.00392156862745098
+  offset: 0.0
+
+tokenizer:
+  blocks:
+    - { layer: Conv2D, filters: 48, kernel_size: 3, strides: 1, padding: same, activation: silu, use_bias: true }
+    - { layer: MaxBlurPooling2D, pool_size: 2, filter_size: 3 }
+    - { layer: Conv2D, filters: 80, kernel_size: 3, strides: 1, padding: same, activation: silu, use_bias: true }
+    - { layer: Conv2D, filters: 96, kernel_size: 3, strides: 1, padding: same, activation: silu, use_bias: true }
+    - { layer: Conv2D, filters: 112, kernel_size: 3, strides: 1, padding: same, activation: silu, use_bias: true }
+
+  positional_emb: true
+  patch_size: 2
+  patch_mlp:
+    layer: MLP
+    hidden_units: [ 112 ]
+    activation: silu
+    dropout_rate: 0.2
+
+transformer_encoder:
+  layers: 5
+  heads: 2
+  projection_dim: 112
+  attention_layout: split_projection
+  units: [ 112, 112 ]
+  activation: silu
+  stochastic_depth: 0.12
+  attention_dropout: 0.1
+  mlp_dropout: 0.2
+  head_mlp_dropout: 0.2
+  token_reducer_heads: 4
+  token_reducer_use_query_residual: true
+  token_reducer_use_output_norm: true
+  post_token_reducer_layers: 3
+  region_pre_seqpool_layers: 1
+  normalization: dyt

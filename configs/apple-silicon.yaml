@@ -1,0 +1,10 @@
+# MacBook / Mac mini (Apple silicon). ONNX Runtime's CoreML provider runs the plate
+# detector on the Neural Engine / GPU; the OCR and RF-DETR stay on CPU, where they are
+# faster and CoreML can stall on them. With your own models, put this file first:
+#   drishti --config configs/apple-silicon.yaml --config models/drishti.yaml image photos/
+runtime:
+  providers: coreml
+models:
+  plate_detector: yolo-v9-t-512-license-plate-end2end
+  vehicle_detector: rf-detr-nano-384-coco
+  ocr: cct-s-v2-global-model

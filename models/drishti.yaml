@@ -1,0 +1,13 @@
+# Run from the drishti folder:  drishti --config models/drishti.yaml image samples
+models:
+  plate_detector: models/plate_yolo26s_in_960.onnx
+  # Public OCR: on the labelled samples it reads as accurately as the fine-tuned one in
+  # models/ocr_in/ and is far more confident (0.95 vs 0.65; scripts/compare_setups.py).
+  # To use the fine-tuned OCR instead:
+  #   ocr: models/ocr_in/best.onnx
+  #   ocr_config: models/ocr_in/best_plate_config.yaml
+  ocr: cct-s-v2-global-model
+  ocr_config: null
+ocr:
+  # four crop views (one tight, three padded): best on real Indian photos with this detector
+  views: [[0.02, -0.06], [0.04, 0.10], [0.10, 0.18], [0.17, 0.27]]

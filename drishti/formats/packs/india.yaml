@@ -1,0 +1,40 @@
+# Indian registration marks (CMVR 1989 scheme as displayed on HSRP plates),
+# Bharat (BH) series, vintage (VA), temporary, armed forces and diplomatic plates.
+# Priors are log-odds relative to the most common layout; soft penalties are
+# log-space and only discourage, never forbid.
+name: india
+description: Indian vehicle registration plates
+
+classes:
+  D: {chars: "0-9"}
+  N: {chars: "1-9"}                                   # no leading zero
+  L: {chars: "A-Z"}
+  S: {chars: "A-Z", soft: {I: -3.0, O: -3.0}}         # series letters skip I and O
+
+sets:
+  STATE:
+    items: [AN, AP, AR, AS, BR, CG, CH, DD, DL, GA, GJ, HP, HR, JH, JK, KA, KL, LA, LD, MH,
+            ML, MN, MP, MZ, NL, OD, PB, PY, RJ, SK, TG, TN, TR, UK, UP, WB]
+    soft: {TS: -0.3, OR: -1.0, UA: -1.5, DN: -1.5}    # codes replaced since 2007-2024, still on the road
+  DIPLO:
+    items: [CD, CC, UN]
+
+patterns:
+  # State + 2-digit RTO + series + 4-digit number (KA05MX3021, MH12DE1433, HR85A0398)
+  - {name: IN-STD, pattern: "{STATE} D{2} S{2} D{4}", prior: 0.0}
+  - {name: IN-STD, pattern: "{STATE} D{2} S{1} D{4}", prior: -0.4}
+  - {name: IN-STD, pattern: "{STATE} D{2} S{3} D{4}", prior: -1.6}
+  - {name: IN-STD, pattern: "{STATE} D{2} D{4}", prior: -2.5}
+  # Delhi drops the RTO leading zero and often has a category letter (DL1CR9541, DL3CAB1234)
+  - {name: IN-STD, pattern: "'DL' D{1} S{1,3} D{4}", prior: -0.2}
+  - {name: IN-STD, pattern: "{STATE} D{1} S{1,2} D{4}", prior: -2.5}
+  # Bharat series: year + BH + number + 1-2 letters (21BH1234AB)
+  - {name: IN-BH, pattern: "D{2} 'BH' D{4} S{1,2}", prior: -1.0}
+  # Vintage: state + VA + 2 letters + number (KAVAAB0123)
+  - {name: IN-VA, pattern: "{STATE} 'VA' S{2} D{4}", prior: -4.0}
+  # Temporary: T + MMYY + state + number + letters (needs a >= 12-slot OCR head)
+  - {name: IN-TEMP, pattern: "'T' D{4} {STATE} D{4} S{1,2}", prior: -3.0}
+  # Armed forces (broad arrow is not a character): year + class + serial + check letter
+  - {name: IN-ARMY, pattern: "D{2} L D{6} L", prior: -5.0}
+  # Diplomatic: number + CD/CC/UN + number, no leading zeros
+  - {name: IN-DIPLO, pattern: "N D{0,2} {DIPLO} N D{0,3}", prior: -5.0}

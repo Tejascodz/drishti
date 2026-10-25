@@ -1,0 +1,13 @@
+# Slot-OCR config for Indian plates.
+# Same alphabet, slot count and input size as the public global CCT models, so
+# their weights load directly for fine-tuning. Ten slots cover every standard,
+# Delhi, BH, VA, armed-forces and diplomatic mark; temporary plates (T + 11-12
+# chars) need max_plate_slots: 13 and training from scratch.
+max_plate_slots: 10
+alphabet: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
+pad_char: '_'
+img_height: 64
+img_width: 128
+keep_aspect_ratio: false
+interpolation: linear
+image_color_mode: rgb

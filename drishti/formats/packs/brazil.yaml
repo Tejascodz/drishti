@@ -1,0 +1,13 @@
+# Brazilian plates: legacy (ABC1234) and Mercosur (ABC1D23).
+# Included as a second region pack; it matches the layouts of the RodoSol-ALPR,
+# UFPR-ALPR and LRLPR-26 benchmarks.
+name: brazil
+description: Brazilian legacy and Mercosur plates
+
+classes:
+  D: {chars: "0-9"}
+  L: {chars: "A-Z"}
+
+patterns:
+  - {name: BR-MERCOSUR, pattern: "L{3} D L D{2}", prior: 0.0}
+  - {name: BR-LEGACY, pattern: "L{3} D{4}", prior: 0.0}
