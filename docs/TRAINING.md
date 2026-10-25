@@ -73,6 +73,15 @@ Upload once, as private Kaggle datasets:
 | `drishti-ocr-real` | output of step 2 | small |
 | `lpr-v13-unique` | `lpr_v13_unique_yolo.zip` (Roboflow v13, one copy per photo, leaks removed) | 335 MB |
 
+Or do the upload and start the OCR run in one command (Kaggle CLI, API token from
+kaggle.com → Settings → API):
+
+```bash
+pip install kaggle
+export KAGGLE_API_TOKEN=...
+bash scripts/kaggle_train_ocr.sh <kaggle-username> data/ocr_real
+```
+
 Then *File → Import notebook* and run:
 
 **`training/kaggle/drishti_detector_kaggle.ipynb`**: YOLO26-s at 960 px on the
