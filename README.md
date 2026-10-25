@@ -36,6 +36,14 @@ reads match their labels. Regenerate: `python scripts/make_readme_images.py samp
 | Synthetic approaching-vehicle clips, 60 frames each | 2 of 3 plates correct at track level (0.85, 0.99) from 22% and 70% correct single frames; the third is one character short and flagged low-confidence (0.34) |
 | Latency, 2-core CPU, 1080p | detector ≈ 150 ms, OCR ≈ 30 ms per batch of crop views, 300–650 ms per photo |
 
+To check reads by eye, `scripts/review_reads.py` builds a page with each original photo next to
+Drishti's output and every plate enlarged with its text, confidence, plate width, other guesses and,
+given a labels file, whether it matches:
+
+![Review page: a dashcam photo of a Delhi car, the original next to Drishti's output, and the plate crop read as DL1CR9541 at 0.93, matching its label](docs/images/review_page.jpg)
+
+<sub>`python scripts/review_reads.py samples --labels samples/labels.csv --out review` on the DL dashcam sample.</sub>
+
 Method, data and every intermediate experiment: [`docs/RESULTS.md`](docs/RESULTS.md).
 The labelled sets are small; treat the reading results as smoke tests until you run
 `drishti eval` on footage from your own camera.
