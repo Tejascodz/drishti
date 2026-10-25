@@ -16,9 +16,11 @@ All notable changes to this project. Versions follow [Semantic Versioning](https
   non-root Docker image, GitHub Actions CI, security policy.
 
 ### Changed
+- The default plate detector is Drishti's YOLO26-s model trained for Indian roads
+  (`drishti-yolo26s-in-960`, release v0.1.0, AGPL-3.0); the OCR stays the public CCT-S v2.
+  Default crop views add the tight first view this detector needs.
 - The OCR never runs on CoreML (it could stall for minutes on Apple silicon).
-- `models/drishti.yaml` pairs the trained YOLO26 detector with the public OCR, which
-  read the labelled samples equally well at higher confidence (see `docs/RESULTS.md`).
+- `models/drishti.yaml` is a template for your own model files.
 - Overlay labels stay inside the frame.
 
 ### Removed

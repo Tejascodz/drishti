@@ -20,10 +20,12 @@ log = logging.getLogger(__name__)
 
 _OIM = "https://github.com/ankandrew/open-image-models/releases/download/assets"
 _FPO = "https://github.com/ankandrew/cnn-ocr-lp/releases/download/arg-plates"
+_DRISHTI = "https://github.com/Tejascodz/drishti/releases/download"
 
 # SHA-256 of every file the hub downloads. A download that does not match is discarded,
 # so a replaced or tampered release asset is never loaded.
 _SHA256 = {
+    "plate_yolo26s_in_960.onnx": "2efa62d1abd2c34449d9dd9d6ada55f34c9679766de7e60c1c363c29c0a916a5",
     "cct_s_v1_global.keras": "6960906f834b5acedb80897c1db9dda0444ec03236be00c3461051a843383b90",
     "cct_s_v1_global.onnx": "5c95b3231fff415b05cb48a3a39fab7c009364c2ee441bef092e0162ab75ea74",
     "cct_s_v1_global_plate_config.yaml": "8ade332ef026520a3360a7c154cc10be664bee25482f3997bce34a7007b4786e",
@@ -70,6 +72,14 @@ for _size, _res in [("s", 608), ("t", 640), ("t", 512), ("t", 416), ("t", 384), 
         license="MIT (open-image-models)",
         notes="Global plate detector, NMS embedded in graph.",
     )
+
+REGISTRY["drishti-yolo26s-in-960"] = ModelSpec(
+    kind="plate_detector",
+    files={"model": f"{_DRISHTI}/v0.1.0/plate_yolo26s_in_960.onnx"},
+    fmt="yolo-raw",
+    license="AGPL-3.0 (trained with Ultralytics YOLO26)",
+    notes="Drishti's plate detector for Indian roads, 960 px; default.",
+)
 
 for _name, _res in [("nano", 384), ("small", 512), ("medium", 576), ("large", 704)]:
     REGISTRY[f"rf-detr-{_name}-{_res}-coco"] = ModelSpec(

@@ -14,7 +14,9 @@ models:
   # Hub name or a path to an ONNX file. Supported plate detector outputs:
   #   YOLOv9 end-to-end (open-image-models), YOLO26 end-to-end detect/pose,
   #   raw Ultralytics heads (NMS applied here).
-  plate_detector: yolo-v9-s-608-license-plate-end2end
+  # Default: Drishti's YOLO26-s detector trained for Indian roads (AGPL-3.0).
+  # MIT-licensed alternative: yolo-v9-s-608-license-plate-end2end
+  plate_detector: drishti-yolo26s-in-960
   # null disables vehicle detection (plates are still read and tracked).
   vehicle_detector: rf-detr-nano-384-coco
   # Hub name, or a path to a slot-OCR ONNX (fast-plate-ocr compatible).
@@ -40,8 +42,11 @@ imaging:
 
 ocr:
   # Crop views read per detection; the decoder fuses the consistent ones.
-  # Values are (horizontal, vertical) padding as a fraction of box size.
+  # Values are (horizontal, vertical) padding as a fraction of box size. The tight
+  # first view suits the default detector's loose boxes (docs/RESULTS.md); with
+  # yolo-v9 detectors the last three alone are enough.
   views:
+    - [0.02, -0.06]
     - [0.04, 0.10]
     - [0.10, 0.18]
     - [0.17, 0.27]

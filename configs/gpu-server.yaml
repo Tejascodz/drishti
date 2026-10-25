@@ -4,7 +4,7 @@ runtime:
   providers: tensorrt,cuda
   trt_fp16: true
 models:
-  plate_detector: yolo-v9-s-608-license-plate-end2end   # or your YOLO26-pose export
+  plate_detector: drishti-yolo26s-in-960
   vehicle_detector: rf-detr-small-512-coco
   ocr: cct-s-v2-global-model                           # or your fine-tuned Indian OCR
 detection:

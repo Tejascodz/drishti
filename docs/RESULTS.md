@@ -86,8 +86,8 @@ The first fine-tuned OCR reads the same strings but with far lower confidence, w
 would send every plate to manual review (automatic tolling needs > 0.95). Its training
 run selected the best epoch on 58 easy validation plates that every epoch scored 100%
 on, so it kept an early, under-trained epoch; notebook v2 validates on 3,000 hard
-synthetic plates as well. Until a v2 model beats the public OCR, `models/drishti.yaml`
-uses the trained detector with the public OCR. The VLM check changed no read here and
+synthetic plates as well. Until a v2 model beats the public OCR, the defaults
+use the trained detector with the public OCR. The VLM check changed no read here and
 adds about a second per photo. Four photos are a smoke test, not a benchmark.
 
 ## Video (tracking + multi-frame fusion)

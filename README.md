@@ -12,8 +12,8 @@ unreadable rather than guessed.
 ![Plate reads on real photos: each photo annotated, with the plate enlarged next to the text and confidence Drishti reported](docs/images/results.jpg)
 
 <sub>Real road photos (demo images from [sanchit2843/Indian_LPR](https://github.com/sanchit2843/Indian_LPR),
-fetched by `scripts/fetch_samples.sh`), read with `models/drishti.yaml`: the trained YOLO26 detector and the
-public OCR. All four reads match their labels. Regenerate with your models: `python scripts/make_readme_images.py samples --config models/drishti.yaml --count 4`.</sub>
+fetched by `scripts/fetch_samples.sh`), read with the default models: Drishti's trained YOLO26 plate detector and the public OCR. All four
+reads match their labels. Regenerate: `python scripts/make_readme_images.py samples --count 4`.</sub>
 
 ## Contents
 
@@ -74,12 +74,16 @@ Python 3.10 or newer.
 git clone https://github.com/Tejascodz/drishti.git && cd drishti
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[server,track]"
-drishti models pull                     # public ONNX models, ~155 MB, checksum-verified
+drishti models pull                     # plate detector, OCR, vehicle model: ~165 MB, checksum-verified
 bash scripts/fetch_samples.sh samples   # 4 labelled Indian road photos
 
 drishti image samples --save-vis out    # prints each plate, writes annotated copies to out/
 drishti eval samples/labels.csv         # recognition rate, precision, character accuracy
 ```
+
+The default plate detector is Drishti's YOLO26-s model trained for Indian roads, downloaded
+from this repository's [releases](https://github.com/Tejascodz/drishti/releases); the OCR is the
+public fast-plate-ocr CCT-S v2 model.
 
 NVIDIA GPUs: `pip install -e ".[gpu]"` and `--config configs/gpu-server.yaml` (TensorRT,
 FP16). Apple silicon: `--config configs/apple-silicon.yaml` runs the detector on CoreML; the
@@ -87,12 +91,13 @@ OCR always runs on CPU, where it is fast and CoreML can stall.
 
 ## Your own models
 
-Copy trained ONNX files into `models/` (git-ignored) and point a config at them.
-`models/drishti.yaml` uses the trained YOLO26 detector with the public OCR, the best
-combination measured so far.
+The defaults (trained detector, public OCR) are the best combination measured so far. To use
+your own models, copy the ONNX files into `models/` (git-ignored) and point a copy of the
+template `models/drishti.yaml` at them:
 
 ```bash
-python scripts/check_models.py                  # each model loads, OCR matches its config, both run together
+python scripts/check_models.py --detector models/my_detector.onnx \
+    --ocr models/ocr_in/best.onnx --ocr-config models/ocr_in/best_plate_config.yaml
 drishti --config models/drishti.yaml image photos/ --save-vis out
 ```
 
@@ -127,7 +132,7 @@ photo separated by `|`.
 | `drishti serve [--host --port]` | REST API |
 | `drishti bench` | Detector, OCR and full-photo latency on this machine |
 | `drishti vlm-check` | Is the local VLM reachable and installed |
-| `drishti models pull\|list` | Download or list the public models |
+| `drishti models pull\|list` | Download or list the models |
 
 Common options: `--config FILE` (repeatable, later files win), `--region india|brazil|generic|pack.yaml`,
 `--providers auto|cpu|cuda|tensorrt|coreml|openvino`, `--no-vehicles`, `--vlm`.
@@ -212,7 +217,7 @@ with `--config FILE` (repeatable; later files win) or environment variables
 
 | Preset | For |
 |---|---|
-| `models/drishti.yaml` | Your trained detector (and OCR) |
+| `models/drishti.yaml` | Template for your own detector and OCR files |
 | `configs/toll-booth.yaml` | One lane, overhead camera, lane polygon and trigger line |
 | `configs/highway-mlff.yaml` | Barrier-free gantries, fast vehicles |
 | `configs/edge-cpu.yaml` | Raspberry Pi 5, NUC, older laptops: small models, two views |
@@ -297,8 +302,9 @@ Use ANPR only where you are permitted to.
 
 Drishti is released under the [MIT licence](LICENSE).
 
-Models downloaded at runtime keep their own licences: open-image-models plate detectors and
-fast-plate-ocr OCR models (MIT), RF-DETR (Apache-2.0). Ultralytics YOLO26, used by the
-training scripts and for trained detectors, is AGPL-3.0; a closed product needs an
-Ultralytics enterprise licence. Datasets: Indian licence plates (Kaggle, CC0), Roboflow
+Models downloaded at runtime keep their own licences. The default plate detector
+(`drishti-yolo26s-in-960`, from this repository's releases) was trained with Ultralytics YOLO26
+and is AGPL-3.0; a closed product needs an Ultralytics enterprise licence, or can switch to the
+MIT-licensed `yolo-v9-s-608-license-plate-end2end` with `models.plate_detector`. fast-plate-ocr
+OCR models and open-image-models detectors are MIT, RF-DETR is Apache-2.0. Datasets: Indian licence plates (Kaggle, CC0), Roboflow
 License Plate Recognition v13 (CC BY 4.0).

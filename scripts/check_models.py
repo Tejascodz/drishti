@@ -227,7 +227,7 @@ def check_pipeline(det: Path, ocr: Path | None, cfg_path: Path | None, labels: P
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--detector", default="models/plate_yolo26s_in_960.onnx")
+    ap.add_argument("--detector", default="drishti-yolo26s-in-960", help="hub name or ONNX path")
     ap.add_argument("--ocr", default="models/ocr_in/best.onnx")
     ap.add_argument("--ocr-config", default="models/ocr_in/best_plate_config.yaml")
     ap.add_argument("--crops", default="data/ocr_real/annotations_auto.csv", help="labelled crops CSV (image_path,plate_text)")
@@ -238,7 +238,8 @@ def main() -> int:
     RUNTIME["providers"] = a.providers
     rel = lambda p: Path(p) if Path(p).is_absolute() else ROOT / p  # noqa: E731
 
-    det, ocr, cfg = rel(a.detector), rel(a.ocr), rel(a.ocr_config)
+    det = hub.fetch(a.detector) if a.detector in hub.REGISTRY else rel(a.detector)
+    ocr, cfg = rel(a.ocr), rel(a.ocr_config)
     det_ok = check_detector(det)
     ocr_ok = check_ocr_file(ocr, cfg)
     if ocr_ok:

@@ -4,11 +4,13 @@
     python scripts/compare_setups.py my_photos/labels.csv --vlm-model qwen3-vl:2b
 
 Setups (a setup whose model file is missing is skipped):
-  public detector + public OCR      the models `drishti models pull` downloads
-  public detector + your OCR
-  your detector   + public OCR
-  your detector   + your OCR
-  your detector   + your OCR + VLM  low-confidence reads checked by Ollama (skipped if Ollama is not running)
+  yolo-v9 detector + public OCR      MIT-licensed public models
+  yolo-v9 detector + your OCR
+  trained detector + public OCR      the default (`drishti models pull`)
+  trained detector + your OCR
+  trained detector + your OCR + VLM  low-confidence reads checked by Ollama (skipped if Ollama is not running)
+
+--detector and --ocr take a hub name or a local ONNX path.
 
 Labels CSV: image_path,plate_text (paths relative to the CSV; several plates separated by |).
 """
@@ -23,6 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from drishti import hub  # noqa: E402
 from drishti.config import load_config  # noqa: E402
 from drishti.evaluate import evaluate  # noqa: E402
 from drishti.ocr.vlm import from_config as vlm_from_config  # noqa: E402
@@ -36,7 +39,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("labels", help="labels CSV, e.g. samples/labels.csv")
     ap.add_argument("--config", default="models/drishti.yaml", help="base config shared by every setup")
-    ap.add_argument("--detector", default="models/plate_yolo26s_in_960.onnx", help="your plate detector")
+    ap.add_argument("--detector", default="drishti-yolo26s-in-960", help="trained plate detector (hub name or path)")
     ap.add_argument("--ocr", default="models/ocr_in/best.onnx", help="your OCR")
     ap.add_argument("--ocr-config", default="models/ocr_in/best_plate_config.yaml")
     ap.add_argument("--vlm-model", default=None, help="Ollama model for the VLM setup (default: from config)")
@@ -51,12 +54,16 @@ def main() -> int:
         print("for samples/, run: bash scripts/fetch_samples.sh samples")
         return 1
 
-    rel = lambda p: Path(p) if Path(p).is_absolute() else ROOT / p  # noqa: E731
+    def rel(p: str) -> Path:
+        if p in hub.REGISTRY:
+            return hub.fetch(p)
+        return Path(p) if Path(p).is_absolute() else ROOT / p
+
     det, ocr, ocr_cfg, base = rel(a.detector), rel(a.ocr), rel(a.ocr_config), rel(a.config)
-    dets = [("public", PUBLIC_DET)] + ([("your", str(det))] if det.exists() else [])
+    dets = [("yolo-v9", PUBLIC_DET)] + ([("trained", str(det))] if det.exists() else [])
     ocrs = [("public", PUBLIC_OCR, None)] + ([("your", str(ocr), str(ocr_cfg))] if ocr.exists() else [])
     if not det.exists():
-        print(f"note: {det} not found, skipping setups with your detector")
+        print(f"note: {det} not found, skipping setups with the trained detector")
     if not ocr.exists():
         print(f"note: {ocr} not found, skipping setups with your OCR")
 
@@ -68,7 +75,7 @@ def main() -> int:
             vcfg["model"] = a.vlm_model
         info = vlm_from_config(vcfg, base_cfg.recognition.region).check()
         if info.get("reachable") and info.get("model_present"):
-            setups.append((f"your detector + your OCR + VLM ({vcfg['model']})", str(det), str(ocr), str(ocr_cfg), True))
+            setups.append((f"trained detector + your OCR + VLM ({vcfg['model']})", str(det), str(ocr), str(ocr_cfg), True))
         else:
             print(f"note: VLM setup skipped ({info.get('hint') or info.get('error') or 'model not installed'})")
 
